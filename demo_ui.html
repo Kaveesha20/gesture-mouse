@@ -732,11 +732,11 @@
       </div>
 
       <div id="legend">
-        <span class="badge">0 move -> cursor</span>
-        <span class="badge">1 left_click -> highlight</span>
-        <span class="badge">2 right_click -> zoom in</span>
-        <span class="badge">3 double_click -> zoom out</span>
-        <span class="badge">4 screenshot -> scroll down</span>
+        <span class="badge">0 move -> cursor move</span>
+        <span class="badge">1 left_click -> left click</span>
+        <span class="badge">2 right_click -> right click</span>
+        <span class="badge">3 double_click -> double click</span>
+        <span class="badge">4 screenshot -> screenshot</span>
       </div>
 
       <div id="canvas-area">
@@ -1279,20 +1279,15 @@
           if (action === "left_click") {
             cursor.classList.add("clicking");
             setTimeout(() => cursor.classList.remove("clicking"), 260);
-            highlightCardUnderCursor(px, py);
             showFlash("Left Click");
           } else if (action === "right_click") {
-            zoomLevel = Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP);
-            updateZoom();
-            showFlash("Zoom In");
+            showFlash("Right Click");
           } else if (action === "double_click") {
-            zoomLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP);
-            updateZoom();
-            showFlash("Zoom Out");
+            cursor.classList.add("clicking");
+            setTimeout(() => cursor.classList.remove("clicking"), 260);
+            showFlash("Double Click");
           } else if (action === "screenshot") {
-            scrollY += SCROLL_STEP;
-            updateScroll();
-            showFlash("Scroll Down");
+            showFlash("Screenshot");
           }
 
           if (recording && landmarks.length === 42) {
