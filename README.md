@@ -17,13 +17,13 @@ Webcam → MediaPipe (21 landmarks × x,y) → GestureNet (PyTorch) → Mouse Ac
 
 ## 🖐️ Supported Gestures
 
-| Key | Gesture | Action |
-|-----|---------|--------|
-| `0` | move | Move mouse cursor |
-| `1` | left_click | Left click |
-| `2` | right_click | Right click |
-| `3` | double_click | Double click |
-| `4` | screenshot | Take & save screenshot |
+| Key | Gesture      | Action                 |
+| --- | ------------ | ---------------------- |
+| `0` | move         | Move mouse cursor      |
+| `1` | left_click   | Left click             |
+| `2` | right_click  | Right click            |
+| `3` | double_click | Double click           |
+| `4` | screenshot   | Take & save screenshot |
 
 ---
 
@@ -47,6 +47,7 @@ gesture-mouse/
 ## 🧠 How Each Part Works
 
 ### 1. `collect_data.py` — Data Collection
+
 - Opens webcam and runs **MediaPipe Hands**
 - Detects 21 hand landmarks (wrist + 4 joints per finger)
 - Each frame = 42 floats (x, y for each landmark), normalized 0–1 by MediaPipe
@@ -57,6 +58,7 @@ gesture-mouse/
 **What to do:** Run this once per gesture. Collected ~250 samples each = **1253 total rows**.
 
 ### 2. `train.py` — Model Training
+
 - Reads `gesture_data.csv`
 - Input: 42 landmark features | Output: 5 gesture classes
 - Architecture: `42 → 128 → 64 → 5` (ReLU + Dropout)
@@ -66,6 +68,7 @@ gesture-mouse/
 **What to do:** Run after collecting data. Takes ~30 seconds on CPU.
 
 ### 3. `main.py` — Live Control
+
 - Loads the trained model and label encoder
 - Each webcam frame → MediaPipe → 42 landmarks → `GestureNet.predict()`
 - If **confidence > 85%**, the gesture action fires
@@ -110,18 +113,37 @@ python train.py
 python main.py
 ```
 
+### Web UI: Data Collection + Playground
+
+The `demo_ui.html` page now contains:
+
+- Data Collection tab: records 42 landmark features from live WebSocket frames and exports CSV.
+- Playground tab: visual gesture sandbox (cursor, zoom, scroll, highlight effects).
+
+Run these in separate terminals:
+
+```bash
+# Terminal 1: start the websocket/camera backend
+python demo_server.py
+
+# Terminal 2: serve the UI
+python -m http.server 8000
+```
+
+Then open `http://localhost:8000/demo_ui.html`.
+
 ---
 
 ## 📊 Dataset
 
-| Gesture | Samples |
-|---------|---------|
-| move (0) | 251 |
-| left_click (1) | 251 |
-| right_click (2) | 250 |
-| double_click (3) | 250 |
-| screenshot (4) | 251 |
-| **Total** | **1253** |
+| Gesture          | Samples  |
+| ---------------- | -------- |
+| move (0)         | 251      |
+| left_click (1)   | 251      |
+| right_click (2)  | 250      |
+| double_click (3) | 250      |
+| screenshot (4)   | 251      |
+| **Total**        | **1253** |
 
 ---
 
@@ -135,12 +157,12 @@ python main.py
 
 ## 🔧 Troubleshooting
 
-| Problem | Fix |
-|---------|-----|
-| Mouse doesn't move | Check `pyautogui.FAILSAFE = False` is set |
-| Low accuracy | Collect more samples, ensure consistent lighting |
-| Hand not detected | Improve lighting, keep hand fully in frame |
-| Clicks too fast | Increase `COOLDOWN` in `main.py` |
+| Problem            | Fix                                              |
+| ------------------ | ------------------------------------------------ |
+| Mouse doesn't move | Check `pyautogui.FAILSAFE = False` is set        |
+| Low accuracy       | Collect more samples, ensure consistent lighting |
+| Hand not detected  | Improve lighting, keep hand fully in frame       |
+| Clicks too fast    | Increase `COOLDOWN` in `main.py`                 |
 
 ---
 

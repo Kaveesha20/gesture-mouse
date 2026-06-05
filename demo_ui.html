@@ -1,436 +1,960 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gesture Controller Demo</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: #0d0d0d;
-    color: #f0f0f0;
-    font-family: 'Segoe UI', sans-serif;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  #statusbar {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #111;
-    border-bottom: 1px solid #222;
-    flex-shrink: 0;
-  }
-  #ws-status {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-size: 13px;
-  }
-  .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #444;
-    transition: background 0.3s;
-  }
-  .dot.connected { background: #00e5a0; box-shadow: 0 0 6px #00e5a0; }
-  .dot.disconnected { background: #ff4444; }
-
-  #gesture-display {
-    display: flex; align-items: center; gap: 0.75rem;
-    margin-left: auto;
-  }
-  .gesture-pill {
-    padding: 0.3rem 1rem;
-    border-radius: 100px;
-    font-size: 13px;
-    font-weight: 500;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #888;
-    transition: all 0.2s;
-    min-width: 120px;
-    text-align: center;
-  }
-  .gesture-pill.active {
-    background: rgba(0,229,160,0.1);
-    border-color: #00e5a0;
-    color: #00e5a0;
-  }
-  .conf-bar-wrap {
-    width: 80px; height: 6px;
-    background: #222; border-radius: 3px; overflow: hidden;
-  }
-  .conf-bar {
-    height: 100%; width: 0%;
-    background: #00e5a0;
-    border-radius: 3px;
-    transition: width 0.15s;
-  }
-
-  #legend {
-    display: flex; gap: 0.75rem;
-    padding: 0.6rem 1.5rem;
-    background: #0d0d0d;
-    border-bottom: 1px solid #1a1a1a;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-  }
-  .legend-item {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 12px; color: #666;
-    padding: 0.25rem 0.75rem;
-    border: 1px solid #222;
-    border-radius: 6px;
-  }
-  .legend-item span { color: #f0f0f0; }
-
-  #canvas-area {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    cursor: none;
-  }
-
-  #scroll-content {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    transition: transform 0.3s ease;
-    transform: translateY(0px);
-  }
-
-  #zoom-container {
-    transform-origin: center top;
-    transform: scale(1);
-    transition: transform 0.3s ease;
-    padding: 2rem;
-  }
-
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .card {
-    background: #111;
-    border: 1px solid #222;
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: border-color 0.2s, transform 0.2s;
-  }
-  .card.highlighted {
-    border-color: #00e5a0;
-    transform: scale(1.02);
-  }
-  .card-icon { font-size: 2rem; margin-bottom: 0.75rem; }
-  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; }
-  .card-desc { font-size: 13px; color: #666; line-height: 1.6; }
-
-  .big-card {
-    background: #111;
-    border: 1px solid #222;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-  .big-card h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-  .big-card p { color: #666; font-size: 14px; }
-
-  .color-blocks {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-  .color-block {
-    height: 80px;
-    border-radius: 10px;
-    transition: transform 0.2s;
-  }
-
-  #cursor {
-    position: absolute;
-    width: 24px; height: 24px;
-    border: 2px solid #00e5a0;
-    border-radius: 50%;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    transition: left 0.05s, top 0.05s;
-    z-index: 1000;
-    left: 50%; top: 50%;
-  }
-  #cursor::after {
-    content: '';
-    position: absolute;
-    width: 4px; height: 4px;
-    background: #00e5a0;
-    border-radius: 50%;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  #cursor.clicking {
-    background: rgba(0,229,160,0.2);
-    transform: translate(-50%, -50%) scale(1.5);
-  }
-
-  #scroll-indicator {
-    position: fixed;
-    right: 1rem; top: 50%;
-    transform: translateY(-50%);
-    width: 4px; height: 100px;
-    background: #222;
-    border-radius: 2px;
-    z-index: 100;
-  }
-  #scroll-thumb {
-    width: 100%;
-    background: #00e5a0;
-    border-radius: 2px;
-    position: absolute;
-    top: 0;
-    height: 30%;
-    transition: top 0.3s;
-  }
-
-  #zoom-indicator {
-    position: fixed;
-    bottom: 1rem; right: 1rem;
-    background: #111;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    font-size: 13px;
-    color: #888;
-    font-family: monospace;
-    z-index: 100;
-  }
-  #zoom-indicator span { color: #00e5a0; }
-
-  #action-flash {
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,229,160,0.15);
-    border: 1px solid #00e5a0;
-    color: #00e5a0;
-    padding: 0.75rem 2rem;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 200;
-  }
-  #action-flash.show { opacity: 1; }
-</style>
-</head>
-<body>
-
-<div id="statusbar">
-  <div id="ws-status">
-    <div class="dot disconnected" id="dot"></div>
-    <span id="ws-label">Connecting...</span>
-  </div>
-  <div id="gesture-display">
-    <div class="gesture-pill" id="gesture-pill">No gesture</div>
-    <div class="conf-bar-wrap">
-      <div class="conf-bar" id="conf-bar"></div>
-    </div>
-    <span style="font-size:12px;color:#555;" id="conf-text">0%</span>
-  </div>
-</div>
-
-<div id="legend">
-  <div class="legend-item">✋ <span>Move</span> — cursor</div>
-  <div class="legend-item">☝️ <span>Left click</span> — highlight card</div>
-  <div class="legend-item">✌️ <span>Right click</span> — zoom in</div>
-  <div class="legend-item">🤞 <span>Double click</span> — zoom out</div>
-  <div class="legend-item">🤙 <span>Screenshot</span> — scroll down</div>
-</div>
-
-<div id="canvas-area">
-  <div id="scroll-content">
-    <div id="zoom-container">
-
-      <div class="big-card">
-        <div style="font-size:3rem;margin-bottom:1rem;">🖐️</div>
-        <h2>Hand Gesture Controller</h2>
-        <p>Move your hand to control this page. Try all 5 gestures!</p>
-      </div>
-
-      <div class="card-grid">
-        <div class="card" id="card-0">
-          <div class="card-icon">🧠</div>
-          <div class="card-title">Neural Network</div>
-          <div class="card-desc">3-layer MLP trained on 42 MediaPipe landmark features per frame.</div>
-        </div>
-        <div class="card" id="card-1">
-          <div class="card-icon">✋</div>
-          <div class="card-title">MediaPipe</div>
-          <div class="card-desc">Detects 21 hand landmarks in real time from webcam video.</div>
-        </div>
-        <div class="card" id="card-2">
-          <div class="card-icon">🖱️</div>
-          <div class="card-title">Mouse Control</div>
-          <div class="card-desc">Gesture predictions mapped to real mouse actions via pynput.</div>
-        </div>
-        <div class="card" id="card-3">
-          <div class="card-icon">📡</div>
-          <div class="card-title">WebSocket</div>
-          <div class="card-desc">Real-time bridge between Python backend and this browser UI.</div>
-        </div>
-        <div class="card" id="card-4">
-          <div class="card-icon">🎯</div>
-          <div class="card-title">85% Threshold</div>
-          <div class="card-desc">Actions only fire when model confidence exceeds 85%.</div>
-        </div>
-        <div class="card" id="card-5">
-          <div class="card-icon">⚡</div>
-          <div class="card-title">Real Time</div>
-          <div class="card-desc">Sub-millisecond inference on CPU — runs on any laptop.</div>
-        </div>
-      </div>
-
-      <div class="color-blocks">
-        <div class="color-block" style="background:#1a3a2a;"></div>
-        <div class="color-block" style="background:#1a2a3a;"></div>
-        <div class="color-block" style="background:#3a1a2a;"></div>
-        <div class="color-block" style="background:#2a3a1a;"></div>
-        <div class="color-block" style="background:#3a2a1a;"></div>
-      </div>
-
-      <div class="big-card" style="margin-top:1rem;">
-        <div style="font-size:2rem;margin-bottom:0.75rem;">🎉</div>
-        <h2>It's working!</h2>
-        <p>Your gesture model is controlling this page in real time.</p>
-      </div>
-
-    </div>
-  </div>
-  <div id="cursor"></div>
-</div>
-
-<div id="scroll-indicator">
-  <div id="scroll-thumb"></div>
-</div>
-<div id="zoom-indicator">Zoom: <span id="zoom-val">100%</span></div>
-<div id="action-flash"></div>
-
-<script>
-  const cursor = document.getElementById('cursor');
-  const canvasArea = document.getElementById('canvas-area');
-  const scrollContent = document.getElementById('scroll-content');
-  const zoomContainer = document.getElementById('zoom-container');
-  const gesturePill = document.getElementById('gesture-pill');
-  const confBar = document.getElementById('conf-bar');
-  const confText = document.getElementById('conf-text');
-  const dot = document.getElementById('dot');
-  const wsLabel = document.getElementById('ws-label');
-  const scrollThumb = document.getElementById('scroll-thumb');
-  const zoomVal = document.getElementById('zoom-val');
-  const actionFlash = document.getElementById('action-flash');
-
-  let scrollY = 0;
-  let zoomLevel = 1.0;
-  const ZOOM_STEP = 0.1;
-  const SCROLL_STEP = 80;
-  const MAX_ZOOM = 2.0;
-  const MIN_ZOOM = 0.5;
-  let flashTimeout = null;
-  let lastHighlighted = null;
-
-  function showFlash(text) {
-    actionFlash.textContent = text;
-    actionFlash.classList.add('show');
-    clearTimeout(flashTimeout);
-    flashTimeout = setTimeout(() => actionFlash.classList.remove('show'), 800);
-  }
-
-  function updateScroll() {
-    const maxScroll = scrollContent.scrollHeight - canvasArea.clientHeight;
-    scrollY = Math.max(0, Math.min(scrollY, maxScroll > 0 ? maxScroll : 0));
-    scrollContent.style.transform = `translateY(-${scrollY}px)`;
-    const pct = maxScroll > 0 ? (scrollY / maxScroll) * 70 : 0;
-    scrollThumb.style.top = pct + '%';
-  }
-
-  function updateZoom() {
-    zoomContainer.style.transform = `scale(${zoomLevel})`;
-    zoomVal.textContent = Math.round(zoomLevel * 100) + '%';
-  }
-
-  function highlightCardUnderCursor(cx, cy) {
-    const cards = document.querySelectorAll('.card');
-    if (lastHighlighted) lastHighlighted.classList.remove('highlighted');
-    lastHighlighted = null;
-    cards.forEach(card => {
-      const rect = card.getBoundingClientRect();
-      if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
-        card.classList.add('highlighted');
-        lastHighlighted = card;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gesture Lab</title>
+    <style>
+      :root {
+        --bg: #0b0f12;
+        --panel: #11181f;
+        --panel-2: #0f141a;
+        --line: #1f2a35;
+        --text: #dce8f2;
+        --muted: #7f96ac;
+        --accent: #31d0aa;
+        --warn: #ffb347;
+        --bad: #ff6262;
       }
-    });
-  }
 
-  function connect() {
-    const ws = new WebSocket('ws://localhost:8765');
-
-    ws.onopen = () => {
-      dot.className = 'dot connected';
-      wsLabel.textContent = 'Connected';
-    };
-
-    ws.onclose = () => {
-      dot.className = 'dot disconnected';
-      wsLabel.textContent = 'Disconnected — restart demo_server.py';
-      setTimeout(connect, 2000);
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const { gesture, confidence, cursor_x, cursor_y, action } = data;
-
-      const names = {'0':'Move','1':'Left Click','2':'Zoom In','3':'Zoom Out','4':'Scroll Down'};
-      gesturePill.textContent = names[gesture] || gesture;
-      gesturePill.className = 'gesture-pill' + (confidence > 85 ? ' active' : '');
-      confBar.style.width = confidence + '%';
-      confText.textContent = confidence + '%';
-
-      const areaW = canvasArea.clientWidth;
-      const areaH = canvasArea.clientHeight;
-      const px = cursor_x * areaW;
-      const py = cursor_y * areaH;
-      cursor.style.left = px + 'px';
-      cursor.style.top = py + 'px';
-
-      if (action === 'left_click') {
-        cursor.classList.add('clicking');
-        setTimeout(() => cursor.classList.remove('clicking'), 300);
-        highlightCardUnderCursor(px, py);
-        showFlash('👆 Left Click');
-      } else if (action === 'zoom_in') {
-        zoomLevel = Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP);
-        updateZoom();
-        showFlash('✌️ Zoom In');
-      } else if (action === 'zoom_out') {
-        zoomLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP);
-        updateZoom();
-        showFlash('🤞 Zoom Out');
-      } else if (action === 'scroll_down') {
-        scrollY += SCROLL_STEP;
-        updateScroll();
-        showFlash('🤙 Scroll Down');
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-    };
-  }
 
-  connect();
-</script>
-</body>
+      body {
+        min-height: 100vh;
+        font-family: "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 15% 10%, #102336 0%, var(--bg) 45%),
+          var(--bg);
+        color: var(--text);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #topbar {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(11, 15, 18, 0.9);
+        backdrop-filter: blur(6px);
+      }
+
+      #brand {
+        font-weight: 700;
+        letter-spacing: 0.4px;
+      }
+
+      #conn {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #586575;
+      }
+
+      .dot.connected {
+        background: var(--accent);
+        box-shadow: 0 0 10px var(--accent);
+      }
+
+      .dot.disconnected {
+        background: var(--bad);
+      }
+
+      #tabs {
+        display: flex;
+        gap: 0.6rem;
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(8, 12, 16, 0.8);
+      }
+
+      .tab {
+        border: 1px solid #2a3642;
+        color: var(--muted);
+        background: #121a22;
+        border-radius: 999px;
+        padding: 0.45rem 0.95rem;
+        font-size: 13px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .tab.active {
+        background: rgba(49, 208, 170, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .page {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .page.active {
+        display: grid;
+      }
+
+      #data-page {
+        grid-template-columns: 360px 1fr;
+      }
+
+      #controls {
+        background: rgba(17, 24, 31, 0.92);
+        border-right: 1px solid var(--line);
+        padding: 1rem;
+        overflow-y: auto;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel-2);
+        border-radius: 14px;
+        padding: 0.9rem;
+        margin-bottom: 0.85rem;
+      }
+
+      .panel h3 {
+        font-size: 14px;
+        margin-bottom: 0.55rem;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+
+      select,
+      input {
+        width: 100%;
+        padding: 0.55rem 0.65rem;
+        background: #0f1620;
+        color: var(--text);
+        border: 1px solid #2a3642;
+        border-radius: 8px;
+        margin-bottom: 0.7rem;
+      }
+
+      .row {
+        display: flex;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+      }
+
+      button {
+        background: #12202b;
+        border: 1px solid #2a3642;
+        color: var(--text);
+        border-radius: 8px;
+        padding: 0.52rem 0.75rem;
+        cursor: pointer;
+        font-size: 12px;
+      }
+
+      button.primary {
+        background: rgba(49, 208, 170, 0.16);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      button.warn {
+        color: var(--warn);
+        border-color: #735327;
+        background: rgba(115, 83, 39, 0.15);
+      }
+
+      .meter {
+        height: 10px;
+        border-radius: 999px;
+        background: #162029;
+        overflow: hidden;
+        margin: 0.45rem 0 0.2rem;
+      }
+
+      .meter > div {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #2d9eff, var(--accent));
+        transition: width 0.15s;
+      }
+
+      #collector-log {
+        max-height: 180px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-family: Consolas, monospace;
+        color: #8eb0ce;
+        font-size: 12px;
+        line-height: 1.3;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0.6rem;
+        background: #0c131a;
+      }
+
+      #live-preview {
+        overflow: auto;
+        padding: 1rem;
+        background: rgba(12, 18, 23, 0.7);
+      }
+
+      #table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 780px;
+        font-size: 12px;
+      }
+
+      #table th,
+      #table td {
+        border: 1px solid var(--line);
+        padding: 0.45rem;
+        text-align: left;
+      }
+
+      #table th {
+        background: #101922;
+        color: #9ec4e7;
+      }
+
+      #play-page {
+        grid-template-rows: auto auto 1fr;
+      }
+
+      #statusbar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.7rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(15, 21, 27, 0.9);
+      }
+
+      #gesture-pill {
+        padding: 0.3rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid #334252;
+        min-width: 140px;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      #gesture-pill.active {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: rgba(49, 208, 170, 0.1);
+      }
+
+      .conf-wrap {
+        width: 90px;
+        height: 7px;
+        background: #18232f;
+        border-radius: 99px;
+        overflow: hidden;
+      }
+
+      .conf-bar {
+        width: 0;
+        height: 100%;
+        background: var(--accent);
+        transition: width 0.12s;
+      }
+
+      #legend {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 0.7rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(10, 15, 20, 0.75);
+      }
+
+      .badge {
+        font-size: 12px;
+        color: var(--muted);
+        border: 1px solid #2b3a49;
+        border-radius: 7px;
+        padding: 0.25rem 0.6rem;
+        background: #101923;
+      }
+
+      #canvas-area {
+        position: relative;
+        overflow: hidden;
+        cursor: none;
+      }
+
+      #scroll-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        transform: translateY(0px);
+        transition: transform 0.2s ease;
+      }
+
+      #zoom-container {
+        transform: scale(1);
+        transform-origin: center top;
+        transition: transform 0.2s ease;
+        padding: 1.2rem;
+      }
+
+      .big-card,
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(17, 24, 31, 0.92);
+      }
+
+      .big-card {
+        text-align: center;
+        padding: 1.4rem;
+        margin-bottom: 0.9rem;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.7rem;
+        margin-bottom: 0.9rem;
+      }
+
+      .card {
+        padding: 1rem;
+        min-height: 112px;
+        transition:
+          transform 0.2s,
+          border-color 0.2s;
+      }
+
+      .card.highlighted {
+        border-color: var(--accent);
+        transform: scale(1.02);
+      }
+
+      #cursor {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        pointer-events: none;
+        transform: translate(-50%, -50%);
+        left: 50%;
+        top: 50%;
+        z-index: 10;
+      }
+
+      #cursor.clicking {
+        background: rgba(49, 208, 170, 0.24);
+        transform: translate(-50%, -50%) scale(1.5);
+      }
+
+      #action-flash {
+        position: fixed;
+        left: 50%;
+        top: 54%;
+        transform: translate(-50%, -50%);
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        background: rgba(49, 208, 170, 0.14);
+        border-radius: 10px;
+        padding: 0.6rem 1.3rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 100;
+      }
+
+      #action-flash.show {
+        opacity: 1;
+      }
+
+      #camera-panel {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        width: 280px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(11, 17, 23, 0.92);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
+        overflow: hidden;
+        z-index: 120;
+      }
+
+      #camera-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.65rem;
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      #camera-view {
+        display: block;
+        width: 100%;
+        height: 170px;
+        object-fit: cover;
+        background: #070b0f;
+      }
+
+      #camera-status {
+        padding: 0.45rem 0.65rem;
+        font-size: 12px;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+      }
+
+      @media (max-width: 1000px) {
+        #data-page {
+          grid-template-columns: 1fr;
+        }
+        .card-grid {
+          grid-template-columns: 1fr;
+        }
+        #camera-panel {
+          width: 220px;
+          right: 0.7rem;
+          bottom: 0.7rem;
+        }
+        #camera-view {
+          height: 130px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="topbar">
+      <div id="brand">Gesture Lab</div>
+      <div id="conn">
+        <div class="dot disconnected" id="dot"></div>
+        <span id="ws-label">Connecting to ws://localhost:8765</span>
+      </div>
+    </div>
+
+    <div id="tabs">
+      <button class="tab active" data-page="data-page">Data Collection</button>
+      <button class="tab" data-page="train-page">Train Model</button>
+      <button class="tab" data-page="play-page">Playground</button>
+    </div>
+
+    <div class="page active" id="data-page">
+      <aside id="controls">
+        <div class="panel">
+          <h3>Collection Settings</h3>
+          <label for="label-select">Target Label</label>
+          <select id="label-select">
+            <option value="0">0 - move</option>
+            <option value="1">1 - left_click</option>
+            <option value="2">2 - right_click</option>
+            <option value="3">3 - double_click</option>
+            <option value="4">4 - screenshot</option>
+          </select>
+
+          <label for="target-samples">Target Samples</label>
+          <input id="target-samples" type="number" min="1" value="250" />
+
+          <div class="row">
+            <button class="primary" id="toggle-record">Start Recording</button>
+            <button class="warn" id="clear-data">Clear Data</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Progress</h3>
+          <div class="muted" id="progress-text">0 / 250 samples</div>
+          <div class="meter"><div id="progress-bar"></div></div>
+          <div class="muted" style="margin-top: 0.5rem" id="recording-status">
+            Status: idle
+          </div>
+          <div class="muted" id="data-size">Buffered rows: 0</div>
+        </div>
+
+        <div class="panel">
+          <h3>Export</h3>
+          <div class="row">
+            <button id="download-csv">Download CSV</button>
+          </div>
+          <p class="muted" style="margin-top: 0.55rem">
+            CSV format matches training input: 42 features + label.
+          </p>
+        </div>
+
+        <div class="panel">
+          <h3>Log</h3>
+          <div id="collector-log"></div>
+        </div>
+      </aside>
+
+      <main id="live-preview">
+        <div class="panel" style="margin-bottom: 0.8rem">
+          <h3>Live Frame Signal</h3>
+          <p class="muted">
+            Server sends landmarks + processed video in real time.
+          </p>
+        </div>
+
+        <table id="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Gesture</td>
+              <td id="live-gesture">-</td>
+            </tr>
+            <tr>
+              <td>Confidence</td>
+              <td id="live-confidence">0%</td>
+            </tr>
+            <tr>
+              <td>Cursor</td>
+              <td id="live-cursor">(0.5000, 0.5000)</td>
+            </tr>
+            <tr>
+              <td>Action</td>
+              <td id="live-action">none</td>
+            </tr>
+            <tr>
+              <td>Landmark Count</td>
+              <td id="live-lm-count">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </main>
+    </div>
+
+    <div class="page" id="play-page">
+      <div id="statusbar">
+        <div id="gesture-pill">No gesture</div>
+        <div class="conf-wrap"><div class="conf-bar" id="conf-bar"></div></div>
+        <span style="font-size: 12px; color: var(--muted)" id="conf-text"
+          >0%</span
+        >
+      </div>
+
+      <div id="legend">
+        <span class="badge">0 move -> cursor</span>
+        <span class="badge">1 left_click -> highlight</span>
+        <span class="badge">2 right_click -> zoom in</span>
+        <span class="badge">3 double_click -> zoom out</span>
+        <span class="badge">4 screenshot -> scroll down</span>
+      </div>
+
+      <div id="canvas-area">
+        <div id="scroll-content">
+          <div id="zoom-container">
+            <div class="big-card">
+              <h2>Gesture Playground</h2>
+              <p class="muted">
+                Move your hand and test all gesture actions in this sandbox.
+              </p>
+            </div>
+
+            <div class="card-grid">
+              <div class="card">
+                Neural network predicts 5 gesture classes in real time.
+              </div>
+              <div class="card">
+                MediaPipe tracks 21 hand landmarks each frame.
+              </div>
+              <div class="card">
+                WebSocket keeps the browser synced with your Python server.
+              </div>
+              <div class="card">
+                Confidence gate protects against accidental actions.
+              </div>
+              <div class="card">
+                Replay and tune your gesture style visually.
+              </div>
+              <div class="card">
+                Use Data Collection tab to export clean training CSV.
+              </div>
+            </div>
+
+            <div class="big-card">
+              <h2>Ready for retraining</h2>
+              <p class="muted">
+                Collect new rows, download CSV, merge into your dataset, and run
+                training.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div id="cursor"></div>
+      </div>
+    </div>
+
+    <div id="action-flash"></div>
+
+    <div id="camera-panel" aria-label="Live camera panel">
+      <div id="camera-head">
+        <span>Live Camera (from Server)</span>
+        <button id="camera-toggle" type="button">Hide</button>
+      </div>
+      <img
+        id="camera-view"
+        style="
+          width: 100%;
+          height: 170px;
+          object-fit: cover;
+          background: #070b0f;
+        "
+      />
+      <div id="camera-status">Camera: active via server</div>
+    </div>
+
+    <script>
+      const dot = document.getElementById("dot");
+      const wsLabel = document.getElementById("ws-label");
+
+      const tabs = document.querySelectorAll(".tab");
+      const pages = document.querySelectorAll(".page");
+
+      const labelSelect = document.getElementById("label-select");
+      const targetSamplesInput = document.getElementById("target-samples");
+      const toggleRecordBtn = document.getElementById("toggle-record");
+      const clearDataBtn = document.getElementById("clear-data");
+      const progressText = document.getElementById("progress-text");
+      const progressBar = document.getElementById("progress-bar");
+      const recordingStatus = document.getElementById("recording-status");
+      const dataSize = document.getElementById("data-size");
+      const downloadCsvBtn = document.getElementById("download-csv");
+      const logBox = document.getElementById("collector-log");
+
+      const liveGesture = document.getElementById("live-gesture");
+      const liveConfidence = document.getElementById("live-confidence");
+      const liveCursor = document.getElementById("live-cursor");
+      const liveAction = document.getElementById("live-action");
+      const liveLmCount = document.getElementById("live-lm-count");
+
+      const canvasArea = document.getElementById("canvas-area");
+      const scrollContent = document.getElementById("scroll-content");
+      const zoomContainer = document.getElementById("zoom-container");
+      const cursor = document.getElementById("cursor");
+      const gesturePill = document.getElementById("gesture-pill");
+      const confBar = document.getElementById("conf-bar");
+      const confText = document.getElementById("conf-text");
+      const actionFlash = document.getElementById("action-flash");
+      const cameraPanel = document.getElementById("camera-panel");
+      const cameraView = document.getElementById("camera-view");
+      const cameraStatus = document.getElementById("camera-status");
+      const cameraToggle = document.getElementById("camera-toggle");
+
+      let scrollY = 0;
+      let zoomLevel = 1.0;
+      const MAX_ZOOM = 2.0;
+      const MIN_ZOOM = 0.6;
+      const ZOOM_STEP = 0.1;
+      const SCROLL_STEP = 80;
+      let flashTimeout = null;
+      let lastHighlighted = null;
+
+      let recording = false;
+      let localRows = [];
+      let sessionRows = [];
+
+      const gestureNames = {
+        0: "move",
+        1: "left_click",
+        2: "right_click",
+        3: "double_click",
+        4: "screenshot",
+      };
+
+      function logLine(text) {
+        const ts = new Date().toLocaleTimeString();
+        logBox.textContent = `[${ts}] ${text}\n` + logBox.textContent;
+      }
+
+      function setTab(pageId) {
+        tabs.forEach((btn) =>
+          btn.classList.toggle("active", btn.dataset.page === pageId),
+        );
+        pages.forEach((page) =>
+          page.classList.toggle("active", page.id === pageId),
+        );
+      }
+
+      tabs.forEach((btn) => {
+        btn.addEventListener("click", () => setTab(btn.dataset.page));
+      });
+
+      function csvHeader() {
+        const header = [];
+        for (let i = 0; i < 21; i++) {
+          header.push(`x${i}`);
+          header.push(`y${i}`);
+        }
+        header.push("label");
+        return header;
+      }
+
+      function updateProgress() {
+        const target = Math.max(
+          1,
+          parseInt(targetSamplesInput.value || "250", 10),
+        );
+        const count = sessionRows.length;
+        const pct = Math.min(100, (count / target) * 100);
+        progressText.textContent = `${count} / ${target} samples`;
+        progressBar.style.width = `${pct}%`;
+        dataSize.textContent = `Buffered rows: ${localRows.length}`;
+
+        if (count >= target && recording) {
+          recording = false;
+          toggleRecordBtn.textContent = "Start Recording";
+          recordingStatus.textContent = "Status: target reached";
+          showFlash("Target reached");
+          logLine(`Target reached (${target}). Recording auto-stopped.`);
+        }
+      }
+
+      function toCsvString(rows) {
+        const lines = [csvHeader().join(",")];
+        for (const row of rows) lines.push(row.join(","));
+        return lines.join("\n");
+      }
+
+      function downloadCsv() {
+        if (!localRows.length) {
+          logLine("No samples to export.");
+          return;
+        }
+
+        const blob = new Blob([toCsvString(localRows)], {
+          type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `gesture_data_ui_${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        logLine(`Exported ${localRows.length} rows to CSV.`);
+      }
+
+      function showFlash(text) {
+        actionFlash.textContent = text;
+        actionFlash.classList.add("show");
+        clearTimeout(flashTimeout);
+        flashTimeout = setTimeout(
+          () => actionFlash.classList.remove("show"),
+          700,
+        );
+      }
+
+      function updateScroll() {
+        const maxScroll = scrollContent.scrollHeight - canvasArea.clientHeight;
+        scrollY = Math.max(0, Math.min(scrollY, maxScroll > 0 ? maxScroll : 0));
+        scrollContent.style.transform = `translateY(-${scrollY}px)`;
+      }
+
+      function updateZoom() {
+        zoomContainer.style.transform = `scale(${zoomLevel})`;
+      }
+
+      function highlightCardUnderCursor(cx, cy) {
+        const cards = document.querySelectorAll(".card");
+        if (lastHighlighted) lastHighlighted.classList.remove("highlighted");
+        lastHighlighted = null;
+        cards.forEach((card) => {
+          const rect = card.getBoundingClientRect();
+          if (
+            cx >= rect.left &&
+            cx <= rect.right &&
+            cy >= rect.top &&
+            cy <= rect.bottom
+          ) {
+            card.classList.add("highlighted");
+            lastHighlighted = card;
+          }
+        });
+      }
+
+      toggleRecordBtn.addEventListener("click", () => {
+        recording = !recording;
+        toggleRecordBtn.textContent = recording
+          ? "Stop Recording"
+          : "Start Recording";
+        recordingStatus.textContent = recording
+          ? "Status: recording"
+          : "Status: idle";
+        if (recording) {
+          sessionRows = [];
+          logLine(
+            `Recording started for label ${labelSelect.value} (${gestureNames[labelSelect.value]}).`,
+          );
+        } else {
+          logLine("Recording stopped.");
+        }
+        updateProgress();
+      });
+
+      clearDataBtn.addEventListener("click", () => {
+        localRows = [];
+        sessionRows = [];
+        recording = false;
+        toggleRecordBtn.textContent = "Start Recording";
+        recordingStatus.textContent = "Status: idle";
+        updateProgress();
+        logLine("Cleared buffered data.");
+      });
+
+      downloadCsvBtn.addEventListener("click", downloadCsv);
+
+      function connect() {
+        const ws = new WebSocket("ws://localhost:8765");
+
+        ws.onopen = () => {
+          dot.className = "dot connected";
+          wsLabel.textContent = "Connected to demo_server.py";
+          logLine("WebSocket connected.");
+        };
+
+        ws.onclose = () => {
+          dot.className = "dot disconnected";
+          wsLabel.textContent = "Disconnected. Restart demo_server.py";
+          logLine("WebSocket disconnected. Retrying in 2s.");
+          setTimeout(connect, 2000);
+        };
+
+        ws.onerror = () => {
+          dot.className = "dot disconnected";
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          const {
+            gesture,
+            confidence = 0,
+            cursor_x = 0.5,
+            cursor_y = 0.5,
+            action = "none",
+            landmarks = [],
+            frame = null,
+          } = data;
+
+          liveGesture.textContent =
+            gesture == null
+              ? "-"
+              : `${gesture} (${gestureNames[gesture] || "unknown"})`;
+          liveConfidence.textContent = `${confidence}%`;
+          liveCursor.textContent = `(${cursor_x.toFixed(4)}, ${cursor_y.toFixed(4)})`;
+          liveAction.textContent = action || "none";
+          liveLmCount.textContent = String(landmarks.length);
+
+          gesturePill.textContent =
+            gesture == null
+              ? "No gesture"
+              : `${gestureNames[gesture] || gesture}`;
+          gesturePill.className = "";
+          gesturePill.id = "gesture-pill";
+          if (confidence > 85) gesturePill.classList.add("active");
+
+          confBar.style.width = `${Math.max(0, Math.min(100, confidence))}%`;
+          confText.textContent = `${confidence}%`;
+
+          const px = cursor_x * canvasArea.clientWidth;
+          const py = cursor_y * canvasArea.clientHeight;
+          cursor.style.left = `${px}px`;
+          cursor.style.top = `${py}px`;
+
+          if (action === "left_click") {
+            cursor.classList.add("clicking");
+            setTimeout(() => cursor.classList.remove("clicking"), 260);
+            highlightCardUnderCursor(px, py);
+            showFlash("Left Click");
+          } else if (action === "right_click") {
+            zoomLevel = Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP);
+            updateZoom();
+            showFlash("Zoom In");
+          } else if (action === "double_click") {
+            zoomLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP);
+            updateZoom();
+            showFlash("Zoom Out");
+          } else if (action === "screenshot") {
+            scrollY += SCROLL_STEP;
+            updateScroll();
+            showFlash("Scroll Down");
+          }
+
+          if (recording && landmarks.length === 42) {
+            const row = [
+              ...landmarks.map((v) => Number(v).toFixed(6)),
+              labelSelect.value,
+            ];
+            localRows.push(row);
+            sessionRows.push(row);
+            updateProgress();
+          }
+          if (data.type === "train_status" || data.type === "train_progress") {
+            if (data.type === "train_progress") {
+              addTrainLog(
+                `Epoch ${data.epoch}/${data.total_epochs} — Loss: ${data.loss}`,
+              );
+            } else if (data.status === "completed") {
+              addTrainLog(data.message);
+            } else if (data.status === "error") {
+              addTrainLog("❌ " + data.message, true);
+            }
+            return;
+          }
+          // Update camera feed from server
+          if (frame) {
+            cameraView.src = `data:image/jpeg;base64,${frame}`;
+          }
+          if (data.frame) {
+            cameraView.src = "data:image/jpeg;base64," + data.frame;
+          }
+        };
+      }
+
+      cameraToggle.addEventListener("click", () => {
+        const hidden = cameraView.style.display === "none";
+        cameraView.style.display = hidden ? "block" : "none";
+        cameraStatus.style.display = hidden ? "block" : "none";
+        cameraToggle.textContent = hidden ? "Hide" : "Show";
+        cameraPanel.style.width = hidden ? "280px" : "120px";
+      });
+
+      updateProgress();
+      logLine(
+        "UI ready. Start demo_server.py — the camera feed now comes from the server.",
+      );
+      connect();
+    </script>
+  </body>
 </html>
