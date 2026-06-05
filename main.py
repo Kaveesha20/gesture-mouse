@@ -65,6 +65,12 @@ GESTURE_NAMES = {
 last_action_time = 0
 COOLDOWN = 0.5
 
+# Smoothing                        ← add from here
+import collections
+smooth_x = collections.deque(maxlen=5)
+smooth_y = collections.deque(maxlen=5)
+dragging = False  
+
 # --------------------------
 # Predict gesture
 # --------------------------
@@ -89,7 +95,12 @@ def perform_action(gesture, processed):
             lm = processed.multi_hand_landmarks[0].landmark[mpHands.HandLandmark.INDEX_FINGER_TIP]
             x = int(lm.x * screen_width)
             y = int(lm.y * screen_height)
-            mouse.position = (x, y)  # pynput fix
+            smooth_x.append(x)
+            smooth_y.append(y)
+            avg_x = int(sum(smooth_x) / len(smooth_x))
+            avg_y = int(sum(smooth_y) / len(smooth_y))
+            ctypes.windll.user32.SetCursorPos(avg_x, avg_y)
+            # mouse.position = (x, y)  # pynput fix
 
         return
 
@@ -124,7 +135,6 @@ def main():
         frame = cv2.flip(frame, 1)
         frameRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         processed = hands.process(frameRGB)
-
         landmark_list = []
         if processed.multi_hand_landmarks:
             hand_landmarks = processed.multi_hand_landmarks[0]
