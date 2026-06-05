@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gesture Controller Demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0d0d0d;
+    color: #f0f0f0;
+    font-family: 'Segoe UI', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #statusbar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #111;
+    border-bottom: 1px solid #222;
+    flex-shrink: 0;
+  }
+  #ws-status {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 13px;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #444;
+    transition: background 0.3s;
+  }
+  .dot.connected { background: #00e5a0; box-shadow: 0 0 6px #00e5a0; }
+  .dot.disconnected { background: #ff4444; }
+
+  #gesture-display {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-left: auto;
+  }
+  .gesture-pill {
+    padding: 0.3rem 1rem;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #888;
+    transition: all 0.2s;
+    min-width: 120px;
+    text-align: center;
+  }
+  .gesture-pill.active {
+    background: rgba(0,229,160,0.1);
+    border-color: #00e5a0;
+    color: #00e5a0;
+  }
+  .conf-bar-wrap {
+    width: 80px; height: 6px;
+    background: #222; border-radius: 3px; overflow: hidden;
+  }
+  .conf-bar {
+    height: 100%; width: 0%;
+    background: #00e5a0;
+    border-radius: 3px;
+    transition: width 0.15s;
+  }
+
+  #legend {
+    display: flex; gap: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    background: #0d0d0d;
+    border-bottom: 1px solid #1a1a1a;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 12px; color: #666;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #222;
+    border-radius: 6px;
+  }
+  .legend-item span { color: #f0f0f0; }
+
+  #canvas-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  #scroll-content {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    transition: transform 0.3s ease;
+    transform: translateY(0px);
+  }
+
+  #zoom-container {
+    transform-origin: center top;
+    transform: scale(1);
+    transition: transform 0.3s ease;
+    padding: 2rem;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .card {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card.highlighted {
+    border-color: #00e5a0;
+    transform: scale(1.02);
+  }
+  .card-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; }
+  .card-desc { font-size: 13px; color: #666; line-height: 1.6; }
+
+  .big-card {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .big-card h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .big-card p { color: #666; font-size: 14px; }
+
+  .color-blocks {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .color-block {
+    height: 80px;
+    border-radius: 10px;
+    transition: transform 0.2s;
+  }
+
+  #cursor {
+    position: absolute;
+    width: 24px; height: 24px;
+    border: 2px solid #00e5a0;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: left 0.05s, top 0.05s;
+    z-index: 1000;
+    left: 50%; top: 50%;
+  }
+  #cursor::after {
+    content: '';
+    position: absolute;
+    width: 4px; height: 4px;
+    background: #00e5a0;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  #cursor.clicking {
+    background: rgba(0,229,160,0.2);
+    transform: translate(-50%, -50%) scale(1.5);
+  }
+
+  #scroll-indicator {
+    position: fixed;
+    right: 1rem; top: 50%;
+    transform: translateY(-50%);
+    width: 4px; height: 100px;
+    background: #222;
+    border-radius: 2px;
+    z-index: 100;
+  }
+  #scroll-thumb {
+    width: 100%;
+    background: #00e5a0;
+    border-radius: 2px;
+    position: absolute;
+    top: 0;
+    height: 30%;
+    transition: top 0.3s;
+  }
+
+  #zoom-indicator {
+    position: fixed;
+    bottom: 1rem; right: 1rem;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 13px;
+    color: #888;
+    font-family: monospace;
+    z-index: 100;
+  }
+  #zoom-indicator span { color: #00e5a0; }
+
+  #action-flash {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,229,160,0.15);
+    border: 1px solid #00e5a0;
+    color: #00e5a0;
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 200;
+  }
+  #action-flash.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="statusbar">
+  <div id="ws-status">
+    <div class="dot disconnected" id="dot"></div>
+    <span id="ws-label">Connecting...</span>
+  </div>
+  <div id="gesture-display">
+    <div class="gesture-pill" id="gesture-pill">No gesture</div>
+    <div class="conf-bar-wrap">
+      <div class="conf-bar" id="conf-bar"></div>
+    </div>
+    <span style="font-size:12px;color:#555;" id="conf-text">0%</span>
+  </div>
+</div>
+
+<div id="legend">
+  <div class="legend-item">✋ <span>Move</span> — cursor</div>
+  <div class="legend-item">☝️ <span>Left click</span> — highlight card</div>
+  <div class="legend-item">✌️ <span>Right click</span> — zoom in</div>
+  <div class="legend-item">🤞 <span>Double click</span> — zoom out</div>
+  <div class="legend-item">🤙 <span>Screenshot</span> — scroll down</div>
+</div>
+
+<div id="canvas-area">
+  <div id="scroll-content">
+    <div id="zoom-container">
+
+      <div class="big-card">
+        <div style="font-size:3rem;margin-bottom:1rem;">🖐️</div>
+        <h2>Hand Gesture Controller</h2>
+        <p>Move your hand to control this page. Try all 5 gestures!</p>
+      </div>
+
+      <div class="card-grid">
+        <div class="card" id="card-0">
+          <div class="card-icon">🧠</div>
+          <div class="card-title">Neural Network</div>
+          <div class="card-desc">3-layer MLP trained on 42 MediaPipe landmark features per frame.</div>
+        </div>
+        <div class="card" id="card-1">
+          <div class="card-icon">✋</div>
+          <div class="card-title">MediaPipe</div>
+          <div class="card-desc">Detects 21 hand landmarks in real time from webcam video.</div>
+        </div>
+        <div class="card" id="card-2">
+          <div class="card-icon">🖱️</div>
+          <div class="card-title">Mouse Control</div>
+          <div class="card-desc">Gesture predictions mapped to real mouse actions via pynput.</div>
+        </div>
+        <div class="card" id="card-3">
+          <div class="card-icon">📡</div>
+          <div class="card-title">WebSocket</div>
+          <div class="card-desc">Real-time bridge between Python backend and this browser UI.</div>
+        </div>
+        <div class="card" id="card-4">
+          <div class="card-icon">🎯</div>
+          <div class="card-title">85% Threshold</div>
+          <div class="card-desc">Actions only fire when model confidence exceeds 85%.</div>
+        </div>
+        <div class="card" id="card-5">
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Real Time</div>
+          <div class="card-desc">Sub-millisecond inference on CPU — runs on any laptop.</div>
+        </div>
+      </div>
+
+      <div class="color-blocks">
+        <div class="color-block" style="background:#1a3a2a;"></div>
+        <div class="color-block" style="background:#1a2a3a;"></div>
+        <div class="color-block" style="background:#3a1a2a;"></div>
+        <div class="color-block" style="background:#2a3a1a;"></div>
+        <div class="color-block" style="background:#3a2a1a;"></div>
+      </div>
+
+      <div class="big-card" style="margin-top:1rem;">
+        <div style="font-size:2rem;margin-bottom:0.75rem;">🎉</div>
+        <h2>It's working!</h2>
+        <p>Your gesture model is controlling this page in real time.</p>
+      </div>
+
+    </div>
+  </div>
+  <div id="cursor"></div>
+</div>
+
+<div id="scroll-indicator">
+  <div id="scroll-thumb"></div>
+</div>
+<div id="zoom-indicator">Zoom: <span id="zoom-val">100%</span></div>
+<div id="action-flash"></div>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  const canvasArea = document.getElementById('canvas-area');
+  const scrollContent = document.getElementById('scroll-content');
+  const zoomContainer = document.getElementById('zoom-container');
+  const gesturePill = document.getElementById('gesture-pill');
+  const confBar = document.getElementById('conf-bar');
+  const confText = document.getElementById('conf-text');
+  const dot = document.getElementById('dot');
+  const wsLabel = document.getElementById('ws-label');
+  const scrollThumb = document.getElementById('scroll-thumb');
+  const zoomVal = document.getElementById('zoom-val');
+  const actionFlash = document.getElementById('action-flash');
+
+  let scrollY = 0;
+  let zoomLevel = 1.0;
+  const ZOOM_STEP = 0.1;
+  const SCROLL_STEP = 80;
+  const MAX_ZOOM = 2.0;
+  const MIN_ZOOM = 0.5;
+  let flashTimeout = null;
+  let lastHighlighted = null;
+
+  function showFlash(text) {
+    actionFlash.textContent = text;
+    actionFlash.classList.add('show');
+    clearTimeout(flashTimeout);
+    flashTimeout = setTimeout(() => actionFlash.classList.remove('show'), 800);
+  }
+
+  function updateScroll() {
+    const maxScroll = scrollContent.scrollHeight - canvasArea.clientHeight;
+    scrollY = Math.max(0, Math.min(scrollY, maxScroll > 0 ? maxScroll : 0));
+    scrollContent.style.transform = `translateY(-${scrollY}px)`;
+    const pct = maxScroll > 0 ? (scrollY / maxScroll) * 70 : 0;
+    scrollThumb.style.top = pct + '%';
+  }
+
+  function updateZoom() {
+    zoomContainer.style.transform = `scale(${zoomLevel})`;
+    zoomVal.textContent = Math.round(zoomLevel * 100) + '%';
+  }
+
+  function highlightCardUnderCursor(cx, cy) {
+    const cards = document.querySelectorAll('.card');
+    if (lastHighlighted) lastHighlighted.classList.remove('highlighted');
+    lastHighlighted = null;
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      if (cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom) {
+        card.classList.add('highlighted');
+        lastHighlighted = card;
+      }
+    });
+  }
+
+  function connect() {
+    const ws = new WebSocket('ws://localhost:8765');
+
+    ws.onopen = () => {
+      dot.className = 'dot connected';
+      wsLabel.textContent = 'Connected';
+    };
+
+    ws.onclose = () => {
+      dot.className = 'dot disconnected';
+      wsLabel.textContent = 'Disconnected — restart demo_server.py';
+      setTimeout(connect, 2000);
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const { gesture, confidence, cursor_x, cursor_y, action } = data;
+
+      const names = {'0':'Move','1':'Left Click','2':'Zoom In','3':'Zoom Out','4':'Scroll Down'};
+      gesturePill.textContent = names[gesture] || gesture;
+      gesturePill.className = 'gesture-pill' + (confidence > 85 ? ' active' : '');
+      confBar.style.width = confidence + '%';
+      confText.textContent = confidence + '%';
+
+      const areaW = canvasArea.clientWidth;
+      const areaH = canvasArea.clientHeight;
+      const px = cursor_x * areaW;
+      const py = cursor_y * areaH;
+      cursor.style.left = px + 'px';
+      cursor.style.top = py + 'px';
+
+      if (action === 'left_click') {
+        cursor.classList.add('clicking');
+        setTimeout(() => cursor.classList.remove('clicking'), 300);
+        highlightCardUnderCursor(px, py);
+        showFlash('👆 Left Click');
+      } else if (action === 'zoom_in') {
+        zoomLevel = Math.min(MAX_ZOOM, zoomLevel + ZOOM_STEP);
+        updateZoom();
+        showFlash('✌️ Zoom In');
+      } else if (action === 'zoom_out') {
+        zoomLevel = Math.max(MIN_ZOOM, zoomLevel - ZOOM_STEP);
+        updateZoom();
+        showFlash('🤞 Zoom Out');
+      } else if (action === 'scroll_down') {
+        scrollY += SCROLL_STEP;
+        updateScroll();
+        showFlash('🤙 Scroll Down');
+      }
+    };
+  }
+
+  connect();
+</script>
+</body>
+</html>
