@@ -54,9 +54,50 @@
         margin-left: auto;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.75rem;
         color: var(--muted);
         font-size: 13px;
+      }
+
+      #model-status {
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid #334252;
+        font-size: 12px;
+      }
+
+      #model-status.ready {
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      #model-status.missing {
+        color: var(--warn);
+        border-color: #735327;
+      }
+
+      #workflow {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        padding: 0.65rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(8, 12, 16, 0.65);
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .step {
+        border: 1px solid #2a3642;
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        background: #101923;
+      }
+
+      .step.active {
+        color: var(--accent);
+        border-color: var(--accent);
+        background: rgba(49, 208, 170, 0.1);
       }
 
       .dot {
@@ -454,9 +495,18 @@
     <div id="topbar">
       <div id="brand">Gesture Lab</div>
       <div id="conn">
+        <span id="model-status" class="missing">Model: not trained</span>
         <div class="dot disconnected" id="dot"></div>
         <span id="ws-label">Connecting to ws://localhost:8765</span>
       </div>
+    </div>
+
+    <div id="workflow">
+      <span class="step active" data-step="data-page"
+        >1. Collect data (per gesture)</span
+      >
+      <span class="step" data-step="train-page">2. Train &amp; update model</span>
+      <span class="step" data-step="play-page">3. Playground / live control</span>
     </div>
 
     <div id="tabs">
@@ -464,11 +514,120 @@
       <button class="tab" data-page="train-page">Train Model</button>
       <button class="tab" data-page="play-page">Playground</button>
     </div>
+    <div
+      class="page"
+      id="train-page"
+      style="grid-template-columns: 360px 1fr; display: none"
+    >
+      <aside
+        id="controls"
+        style="
+          background: rgba(17, 24, 31, 0.92);
+          border-right: 1px solid var(--line);
+          padding: 1rem;
+          overflow-y: auto;
+        "
+      >
+        <div class="panel">
+          <h3>Hyperparameters</h3>
+          <p class="muted" style="margin-bottom: 0.7rem">
+            Replaces <code>train.py</code>. Trains on the full server dataset and
+            hot-reloads the live model — no separate script needed.
+          </p>
+          <label for="train-epochs">Epochs</label>
+          <input id="train-epochs" type="number" min="1" max="200" value="30" />
 
+          <label for="train-lr">Learning Rate</label>
+          <input
+            id="train-lr"
+            type="number"
+            step="0.0001"
+            min="0.0001"
+            value="0.001"
+          />
+
+          <label for="train-split">Test Split (Validation)</label>
+          <input
+            id="train-split"
+            type="number"
+            step="0.05"
+            min="0.1"
+            max="0.5"
+            value="0.2"
+          />
+
+          <div class="row">
+            <button class="primary" id="start-train-btn" style="width: 100%">
+              Train &amp; Update Model
+            </button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Dataset Summary</h3>
+          <div class="muted" id="train-dataset-status">
+            Server dataset: 0 rows | Buffer: 0 rows
+          </div>
+          <div class="muted" id="train-label-breakdown" style="margin-top: 0.4rem">
+            Label counts: —
+          </div>
+        </div>
+      </aside>
+
+      <main
+        style="
+          padding: 1rem;
+          background: rgba(12, 18, 23, 0.7);
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        "
+      >
+        <div class="panel">
+          <h3>Training Dashboard</h3>
+          <p class="muted">
+            Training merges any buffered samples into
+            <code>gesture_data.csv</code> on the server, retrains GestureNet,
+            and hot-reloads the live model for inference.
+          </p>
+        </div>
+        <div
+          class="panel"
+          style="flex: 1; display: flex; flex-direction: column"
+        >
+          <h3>Server Training Output</h3>
+          <div
+            id="train-log-box"
+            style="
+              flex: 1;
+              min-height: 300px;
+              max-height: 500px;
+              overflow-y: auto;
+              white-space: pre-wrap;
+              font-family: Consolas, monospace;
+              color: #31d0aa;
+              font-size: 13px;
+              line-height: 1.4;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              padding: 0.8rem;
+              background: #0c131a;
+              margin-top: 0.5rem;
+            "
+          >
+            Dashboard idle. Awaiting data...
+          </div>
+        </div>
+      </main>
+    </div>
     <div class="page active" id="data-page">
       <aside id="controls">
         <div class="panel">
           <h3>Collection Settings</h3>
+          <p class="muted" style="margin-bottom: 0.7rem">
+            Replaces <code>collect_data.py</code>. Pick a gesture, record ~250
+            samples, save to server. Repeat for all 5 gestures (0–4).
+          </p>
           <label for="label-select">Target Label</label>
           <select id="label-select">
             <option value="0">0 - move</option>
@@ -495,15 +654,24 @@
             Status: idle
           </div>
           <div class="muted" id="data-size">Buffered rows: 0</div>
+          <div class="muted" id="server-data-size" style="margin-top: 0.35rem">
+            Server dataset: 0 rows
+          </div>
         </div>
 
         <div class="panel">
-          <h3>Export</h3>
+          <h3>Save &amp; Export</h3>
           <div class="row">
+            <button class="primary" id="save-server-btn">Save to Server</button>
             <button id="download-csv">Download CSV</button>
           </div>
+          <label style="margin-top: 0.55rem">
+            <input type="checkbox" id="auto-retrain" checked />
+            Retrain model after saving new data
+          </label>
           <p class="muted" style="margin-top: 0.55rem">
-            CSV format matches training input: 42 features + label.
+            Saves buffered samples to <code>gesture_data.csv</code> and can
+            automatically retrain the live model.
           </p>
         </div>
 
@@ -598,15 +766,15 @@
                 Replay and tune your gesture style visually.
               </div>
               <div class="card">
-                Use Data Collection tab to export clean training CSV.
+                Collect and train from the UI — no CLI scripts required.
               </div>
             </div>
 
             <div class="big-card">
-              <h2>Ready for retraining</h2>
+              <h2>Live mouse control</h2>
               <p class="muted">
-                Collect new rows, download CSV, merge into your dataset, and run
-                training.
+                Replaces <code>main.py</code>. While this app is running, gestures
+                also control your real mouse cursor and clicks on screen.
               </p>
             </div>
           </div>
@@ -637,7 +805,24 @@
     <script>
       const dot = document.getElementById("dot");
       const wsLabel = document.getElementById("ws-label");
-
+      const modelStatus = document.getElementById("model-status");
+      const workflowSteps = document.querySelectorAll(".step");
+      // New Training Form Elements
+      const trainPage = document.getElementById("train-page");
+      const startTrainBtn = document.getElementById("start-train-btn");
+      const trainEpochsInput = document.getElementById("train-epochs");
+      const trainLrInput = document.getElementById("train-lr");
+      const trainSplitInput = document.getElementById("train-split");
+      const trainDatasetStatus = document.getElementById(
+        "train-dataset-status",
+      );
+      const trainLabelBreakdown = document.getElementById(
+        "train-label-breakdown",
+      );
+      const trainLogBox = document.getElementById("train-log-box");
+      const saveServerBtn = document.getElementById("save-server-btn");
+      const autoRetrainCheckbox = document.getElementById("auto-retrain");
+      const serverDataSize = document.getElementById("server-data-size");
       const tabs = document.querySelectorAll(".tab");
       const pages = document.querySelectorAll(".page");
 
@@ -683,6 +868,12 @@
       let recording = false;
       let localRows = [];
       let sessionRows = [];
+      let ws = null;
+      let serverTotalRows = 0;
+      let serverLabelCounts = {};
+      let trainingInProgress = false;
+      let pendingRetrainAfterSave = false;
+      let modelReady = false;
 
       const gestureNames = {
         0: "move",
@@ -697,17 +888,83 @@
         logBox.textContent = `[${ts}] ${text}\n` + logBox.textContent;
       }
 
+      function addTrainLog(text, isError = false) {
+        const ts = new Date().toLocaleTimeString();
+        const prefix = isError ? "ERROR" : "INFO";
+        trainLogBox.textContent =
+          `[${ts}] ${prefix}: ${text}\n` + trainLogBox.textContent;
+      }
+
+      function formatLabelBreakdown(labels) {
+        const keys = Object.keys(labels || {}).sort(
+          (a, b) => Number(a) - Number(b),
+        );
+        if (!keys.length) return "Label counts: —";
+        return (
+          "Label counts: " +
+          keys
+            .map(
+              (k) =>
+                `${k} ${gestureNames[k] || ""} (${labels[k]})`.trim(),
+            )
+            .join(", ")
+        );
+      }
+
+      function updateModelStatus() {
+        if (modelReady) {
+          modelStatus.textContent = "Model: ready";
+          modelStatus.className = "ready";
+        } else {
+          modelStatus.textContent = "Model: not trained";
+          modelStatus.className = "missing";
+        }
+      }
+
+      function updateDatasetDisplays() {
+        serverDataSize.textContent = `Server dataset: ${serverTotalRows} rows`;
+        dataSize.textContent = `Buffered rows: ${localRows.length}`;
+        trainDatasetStatus.textContent = `Server dataset: ${serverTotalRows} rows | Buffer: ${localRows.length} rows`;
+        trainLabelBreakdown.textContent =
+          formatLabelBreakdown(serverLabelCounts);
+      }
+
+      function csvToBase64(csvText) {
+        return btoa(unescape(encodeURIComponent(csvText)));
+      }
+
       function setTab(pageId) {
         tabs.forEach((btn) =>
           btn.classList.toggle("active", btn.dataset.page === pageId),
         );
-        pages.forEach((page) =>
-          page.classList.toggle("active", page.id === pageId),
+        workflowSteps.forEach((step) =>
+          step.classList.toggle("active", step.dataset.step === pageId),
         );
+        pages.forEach((page) => {
+          if (page.id === pageId) {
+            page.style.display = pageId === "play-page" ? "grid" : "grid";
+            page.classList.add("active");
+          } else {
+            page.style.display = "none";
+            page.classList.remove("active");
+          }
+        });
+
+        if (pageId === "train-page") {
+          updateDatasetDisplays();
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "get_dataset" }));
+          }
+        }
       }
 
       tabs.forEach((btn) => {
         btn.addEventListener("click", () => setTab(btn.dataset.page));
+      });
+
+      workflowSteps.forEach((step) => {
+        step.addEventListener("click", () => setTab(step.dataset.step));
+        step.style.cursor = "pointer";
       });
 
       function csvHeader() {
@@ -729,7 +986,7 @@
         const pct = Math.min(100, (count / target) * 100);
         progressText.textContent = `${count} / ${target} samples`;
         progressBar.style.width = `${pct}%`;
-        dataSize.textContent = `Buffered rows: ${localRows.length}`;
+        updateDatasetDisplays();
 
         if (count >= target && recording) {
           recording = false;
@@ -835,8 +1092,70 @@
 
       downloadCsvBtn.addEventListener("click", downloadCsv);
 
+      function sendSaveToServer(triggerRetrain = false) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          logLine("Not connected to server.");
+          return false;
+        }
+        if (!localRows.length) {
+          logLine("No buffered samples to save.");
+          return false;
+        }
+
+        pendingRetrainAfterSave = triggerRetrain;
+        ws.send(
+          JSON.stringify({
+            type: "save_data",
+            csv_base64: csvToBase64(toCsvString(localRows)),
+          }),
+        );
+        logLine(`Sending ${localRows.length} rows to server...`);
+        saveServerBtn.disabled = true;
+        return true;
+      }
+
+      function sendTrain(includeBuffer = true) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          addTrainLog("Not connected to server.", true);
+          return;
+        }
+        if (trainingInProgress) {
+          addTrainLog("Training already in progress.", true);
+          return;
+        }
+
+        const payload = {
+          type: "train",
+          epochs: parseInt(trainEpochsInput.value || "30", 10),
+          lr: parseFloat(trainLrInput.value || "0.001"),
+          test_split: parseFloat(trainSplitInput.value || "0.2"),
+        };
+
+        if (includeBuffer && localRows.length) {
+          payload.csv_base64 = csvToBase64(toCsvString(localRows));
+          addTrainLog(
+            `Merging ${localRows.length} buffered rows, then training...`,
+          );
+        } else if (serverTotalRows === 0) {
+          addTrainLog("No dataset on server. Collect samples first.", true);
+          return;
+        } else {
+          addTrainLog(`Training on server dataset (${serverTotalRows} rows)...`);
+        }
+
+        trainingInProgress = true;
+        startTrainBtn.disabled = true;
+        ws.send(JSON.stringify(payload));
+      }
+
+      saveServerBtn.addEventListener("click", () => {
+        sendSaveToServer(autoRetrainCheckbox.checked);
+      });
+
+      startTrainBtn.addEventListener("click", () => sendTrain(true));
+
       function connect() {
-        const ws = new WebSocket("ws://localhost:8765");
+        ws = new WebSocket("ws://localhost:8765");
 
         ws.onopen = () => {
           dot.className = "dot connected";
@@ -857,6 +1176,71 @@
 
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
+
+          if (data.type === "dataset_info") {
+            serverTotalRows = data.total || 0;
+            serverLabelCounts = data.labels || {};
+            if (typeof data.model_ready === "boolean") {
+              modelReady = data.model_ready;
+              updateModelStatus();
+            }
+            updateDatasetDisplays();
+            return;
+          }
+
+          if (data.type === "save_status") {
+            saveServerBtn.disabled = false;
+            if (data.status === "completed") {
+              logLine(data.message);
+              if (typeof data.total === "number") {
+                serverTotalRows = data.total;
+              }
+              localRows = [];
+              sessionRows = [];
+              recording = false;
+              toggleRecordBtn.textContent = "Start Recording";
+              recordingStatus.textContent = "Status: idle";
+              updateProgress();
+              updateDatasetDisplays();
+              if (pendingRetrainAfterSave) {
+                pendingRetrainAfterSave = false;
+                setTab("train-page");
+                sendTrain(false);
+              }
+            } else {
+              logLine("Save failed: " + data.message);
+              pendingRetrainAfterSave = false;
+            }
+            return;
+          }
+
+          if (data.type === "train_status" || data.type === "train_progress") {
+            if (data.type === "train_progress") {
+              const acc =
+                data.val_acc != null ? ` | Val Acc: ${data.val_acc}%` : "";
+              addTrainLog(
+                `Epoch ${data.epoch}/${data.total_epochs} — Loss: ${data.loss}${acc}`,
+              );
+            } else if (data.status === "starting") {
+              addTrainLog(data.message);
+            } else if (data.status === "completed") {
+              trainingInProgress = false;
+              startTrainBtn.disabled = false;
+              modelReady = true;
+              updateModelStatus();
+              localRows = [];
+              sessionRows = [];
+              updateDatasetDisplays();
+              addTrainLog(data.message);
+              showFlash("Model updated");
+            } else if (data.status === "error") {
+              trainingInProgress = false;
+              startTrainBtn.disabled = false;
+              addTrainLog(data.message, true);
+            }
+            return;
+          }
+
           const {
             gesture,
             confidence = 0,
@@ -920,24 +1304,14 @@
             sessionRows.push(row);
             updateProgress();
           }
-          if (data.type === "train_status" || data.type === "train_progress") {
-            if (data.type === "train_progress") {
-              addTrainLog(
-                `Epoch ${data.epoch}/${data.total_epochs} — Loss: ${data.loss}`,
-              );
-            } else if (data.status === "completed") {
-              addTrainLog(data.message);
-            } else if (data.status === "error") {
-              addTrainLog("❌ " + data.message, true);
-            }
-            return;
+          if (typeof data.model_ready === "boolean") {
+            modelReady = data.model_ready;
+            updateModelStatus();
           }
-          // Update camera feed from server
-          if (frame) {
-            cameraView.src = `data:image/jpeg;base64,${frame}`;
-          }
-          if (data.frame) {
-            cameraView.src = "data:image/jpeg;base64," + data.frame;
+
+          if (frame || data.frame) {
+            cameraView.src =
+              "data:image/jpeg;base64," + (frame || data.frame);
           }
         };
       }
@@ -951,8 +1325,10 @@
       });
 
       updateProgress();
+      updateDatasetDisplays();
+      updateModelStatus();
       logLine(
-        "UI ready. Start demo_server.py — the camera feed now comes from the server.",
+        "UI ready. Run: python run_ui.py — then collect, train, and play all from here.",
       );
       connect();
     </script>

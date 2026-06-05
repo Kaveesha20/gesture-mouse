@@ -27,55 +27,76 @@ Webcam → MediaPipe (21 landmarks × x,y) → GestureNet (PyTorch) → Mouse Ac
 
 ---
 
+## 🚀 Quick Start (UI only)
+
+Everything — **data collection, training, and live mouse control** — runs from the web UI. You do **not** need to run `collect_data.py`, `train.py`, or `main.py` separately.
+
+### Install dependencies
+
+```bash
+pip install mediapipe opencv-python torch pyautogui pynput scikit-learn pandas numpy websockets
+```
+
+### Run one command
+
+```bash
+python run_ui.py
+```
+
+This starts the backend server, serves the UI, and opens your browser to `http://localhost:8000/demo_ui.html`.
+
+### Use the 3 tabs in the browser
+
+| Tab | Replaces | What to do |
+| --- | -------- | ---------- |
+| **Data Collection** | `collect_data.py` | Select gesture 0–4 → **Start Recording** → collect ~250 samples → **Save to Server** |
+| **Train Model** | `train.py` | Click **Train & Update Model** — merges new data into `gesture_data.csv`, retrains, and hot-reloads the model |
+| **Playground** | `main.py` | Test gestures visually; the server also controls your real mouse while running |
+
+**Tip:** Enable **Retrain model after saving new data** on the Data Collection tab to automatically train after each save.
+
+---
+
 ## 📁 Project Structure
 
 ```
 gesture-mouse/
 │
-├── collect_data.py       # Step 1 — Record gesture samples via webcam
-├── gesture_data.csv      # Collected dataset (1253 samples, 5 classes)
-├── train.py              # Step 2 — Train PyTorch neural network
-├── gesture_model.pth     # Trained model weights
-├── label_encoder.pkl     # Sklearn LabelEncoder (maps class index → gesture label)
-└── main.py               # Step 3 — Run live gesture mouse control
+├── run_ui.py             # ← Start here (one command)
+├── demo_server.py        # WebSocket backend: camera, inference, training, mouse control
+├── demo_ui.html          # Web UI: collect, train, playground
+├── gesture_data.csv      # Dataset (grows as you save from the UI)
+├── gesture_model.pth     # Trained model weights (created/updated by UI training)
+├── label_encoder.pkl     # Label encoder (created/updated by UI training)
+│
+├── collect_data.py       # Legacy CLI collector (optional)
+├── train.py              # Legacy CLI trainer (optional)
+└── main.py               # Legacy CLI live control (optional)
 ```
-
-> `test_mouse3.py` is a standalone Windows script to verify cursor movement via `ctypes`.
 
 ---
 
-## 🧠 How Each Part Works
+## 🧠 How It Works
 
-### 1. `collect_data.py` — Data Collection
+### Data Collection (UI)
 
-- Opens webcam and runs **MediaPipe Hands**
-- Detects 21 hand landmarks (wrist + 4 joints per finger)
-- Each frame = 42 floats (x, y for each landmark), normalized 0–1 by MediaPipe
-- Press a gesture key (`0`–`4`), then `SPACE` to start recording
-- Auto-stops at 250 samples per gesture
-- Appends rows to `gesture_data.csv`
+- Server streams webcam frames + 42 landmark features over WebSocket
+- UI records samples per gesture label into a buffer
+- **Save to Server** appends rows to `gesture_data.csv`
 
-**What to do:** Run this once per gesture. Collected ~250 samples each = **1253 total rows**.
+### Training (UI)
 
-### 2. `train.py` — Model Training
-
-- Reads `gesture_data.csv`
-- Input: 42 landmark features | Output: 5 gesture classes
+- Trains `GestureNet` on the full server dataset
 - Architecture: `42 → 128 → 64 → 5` (ReLU + Dropout)
-- Trains for 50 epochs with Adam optimizer, CrossEntropyLoss
 - Saves `gesture_model.pth` and `label_encoder.pkl`
+- Model is hot-reloaded for live inference immediately
 
-**What to do:** Run after collecting data. Takes ~30 seconds on CPU.
+### Live Control (server + Playground tab)
 
-### 3. `main.py` — Live Control
-
-- Loads the trained model and label encoder
-- Each webcam frame → MediaPipe → 42 landmarks → `GestureNet.predict()`
+- Each frame → MediaPipe → 42 landmarks → `GestureNet.predict()`
 - If **confidence > 85%**, the gesture action fires
-- Mouse movement uses `pynput` (smooth, no OS restrictions on Windows)
-- Clicks use `pynput`, double-click uses `pyautogui`, screenshot saves as PNG
-
-**What to do:** Run this to use the system. Press `Q` to quit.
+- Mouse movement via `ctypes` (Windows), clicks via `pynput`
+- Action cooldown: **0.5s**
 
 ---
 
@@ -86,51 +107,6 @@ Input (42)  →  Linear(128)  →  ReLU  →  Dropout(0.3)
             →  Linear(64)   →  ReLU  →  Dropout(0.2)
             →  Linear(5)    →  Softmax  →  Predicted Gesture
 ```
-
-- Confidence threshold: **0.85** (actions only fire when model is sure)
-- Action cooldown: **0.5s** (prevents repeated accidental clicks)
-
----
-
-## 🚀 Setup & Usage
-
-### Install dependencies
-
-```bash
-pip install mediapipe opencv-python torch pyautogui pynput scikit-learn pandas numpy
-```
-
-### Step-by-step
-
-```bash
-# 1. Collect gesture data (run for each gesture 0–4)
-python collect_data.py
-
-# 2. Train the model
-python train.py
-
-# 3. Run the mouse controller
-python main.py
-```
-
-### Web UI: Data Collection + Playground
-
-The `demo_ui.html` page now contains:
-
-- Data Collection tab: records 42 landmark features from live WebSocket frames and exports CSV.
-- Playground tab: visual gesture sandbox (cursor, zoom, scroll, highlight effects).
-
-Run these in separate terminals:
-
-```bash
-# Terminal 1: start the websocket/camera backend
-python demo_server.py
-
-# Terminal 2: serve the UI
-python -m http.server 8000
-```
-
-Then open `http://localhost:8000/demo_ui.html`.
 
 ---
 
@@ -145,13 +121,15 @@ Then open `http://localhost:8000/demo_ui.html`.
 | screenshot (4)   | 251      |
 | **Total**        | **1253** |
 
+New samples saved from the UI are appended to this file.
+
 ---
 
 ## 🖥️ Platform Notes
 
 - Developed and tested on **Windows**
-- `test_mouse3.py` uses `ctypes.windll` — Windows only
-- `main.py` uses `pynput` for mouse control which works cross-platform; replace `pyautogui.size()` with platform alternatives on Linux/Mac if needed
+- `demo_server.py` uses `ctypes.windll` for cursor movement — Windows only
+- Legacy `main.py` is cross-platform for mouse clicks via `pynput`
 
 ---
 
@@ -159,10 +137,12 @@ Then open `http://localhost:8000/demo_ui.html`.
 
 | Problem            | Fix                                              |
 | ------------------ | ------------------------------------------------ |
-| Mouse doesn't move | Check `pyautogui.FAILSAFE = False` is set        |
-| Low accuracy       | Collect more samples, ensure consistent lighting |
+| UI won't connect   | Make sure `python run_ui.py` is running          |
+| Model: not trained | Collect data in UI, then use Train Model tab     |
+| Mouse doesn't move | Keep `demo_server.py` running (started by `run_ui.py`) |
+| Low accuracy       | Collect more samples per gesture, improve lighting |
 | Hand not detected  | Improve lighting, keep hand fully in frame       |
-| Clicks too fast    | Increase `COOLDOWN` in `main.py`                 |
+| Clicks too fast    | Increase `COOLDOWN` in `demo_server.py`          |
 
 ---
 
@@ -170,5 +150,4 @@ Then open `http://localhost:8000/demo_ui.html`.
 
 - Add scroll gesture
 - Support two-hand gestures
-- Retrain with more diverse data (lighting, hand sizes)
 - Package as `.exe` with PyInstaller
