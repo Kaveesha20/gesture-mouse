@@ -30,7 +30,7 @@
           radial-gradient(circle at 15% 10%, #102336 0%, var(--bg) 45%),
           var(--bg);
         color: var(--text);
-        overflow: hidden;
+        overflow: auto;
         display: flex;
         flex-direction: column;
       }
@@ -144,7 +144,7 @@
       .page {
         display: none;
         flex: 1;
-        overflow: hidden;
+        overflow-y: auto;
       }
 
       .page.active {
@@ -344,7 +344,7 @@
 
       #canvas-area {
         position: relative;
-        overflow: hidden;
+        overflow-y: auto;
         cursor: none;
         background:
           linear-gradient(rgba(49, 208, 170, 0.05) 1px, transparent 1px),
@@ -354,7 +354,7 @@
       }
 
       #play-surface {
-        position: absolute;
+        position: relative;
         inset: 0;
         display: grid;
         grid-template-columns: minmax(280px, 1fr) minmax(320px, 420px);
@@ -402,6 +402,9 @@
       .actions-panel h2 {
         font-size: 18px;
         margin-bottom: 0.45rem;
+      }
+      .actions-panel {
+         overflow-y: auto;
       }
 
       #cursor-readout {
@@ -743,7 +746,7 @@
           <h3>Collection Settings</h3>
           <p class="muted" style="margin-bottom: 0.7rem">
             Replaces <code>collect_data.py</code>. Pick a gesture, record ~250
-            samples, save to server. Repeat for all 5 gestures (0–4).
+            samples, save to server. Repeat for all 7 gestures (0–6).
           </p>
           <label for="label-select">Target Label</label>
           <select id="label-select">
@@ -752,6 +755,8 @@
             <option value="2">2 - right_click</option>
             <option value="3">3 - double_click</option>
             <option value="4">4 - screenshot</option>
+            <option value="5">5 - scroll_up</option>   
+            <option value="6">6 - scroll_down</option>
           </select>
 
           <label for="target-samples">Target Samples</label>
@@ -854,6 +859,8 @@
         <span class="badge">2 right_click -> right click</span>
         <span class="badge">3 double_click -> double click</span>
         <span class="badge">4 screenshot -> screenshot</span>
+        <span class="badge">5 scroll_up -> scroll up</span> 
+        <span class="badge">6 scroll_down -> scroll down</span>
       </div>
 
       <div id="canvas-area">
@@ -910,6 +917,16 @@
               </div>
             </div>
             <div id="screenshot-preview">Screenshot gesture waiting...</div>
+            <div class="action-tile" data-action="scroll_up">
+              <strong>5. Scroll Up</strong>
+              <span>Scrolls the page upward.</span>
+              <div class="test-widget" id="scroll-up-count">Scrolls: 0</div>
+            </div>
+            <div class="action-tile" data-action="scroll_down">
+              <strong>6. Scroll Down</strong>
+              <span>Scrolls the page downward.</span>
+              <div class="test-widget" id="scroll-down-count">Scrolls: 0</div>
+            </div>
           </section>
         </div>
         <div id="cursor"></div>
@@ -1006,6 +1023,8 @@
       let modelReady = false;
       let doubleClickTotal = 0;
       let screenshotTotal = 0;
+      let scrollUpTotal = 0;
+      let scrollDownTotal = 0;
 
       const gestureNames = {
         0: "move",
@@ -1013,6 +1032,8 @@
         2: "right_click",
         3: "double_click",
         4: "screenshot",
+        5: "scroll_up", 
+        6: "scroll_down",
       };
 
       function logLine(text) {
@@ -1192,6 +1213,14 @@
           screenshotCount.textContent = `Captures: ${screenshotTotal}`;
           screenshotPreview.textContent =
             "Screenshot gesture triggered at " + new Date().toLocaleTimeString();
+        }
+        if (action === "scroll_up") {
+          scrollUpTotal += 1;
+          document.getElementById("scroll-up-count").textContent = `Scrolls: ${scrollUpTotal}`;
+        }
+        if (action === "scroll_down") {
+          scrollDownTotal += 1;
+          document.getElementById("scroll-down-count").textContent = `Scrolls: ${scrollDownTotal}`;
         }
       }
 
@@ -1435,6 +1464,10 @@
             showFlash("Double Click");
           } else if (action === "screenshot") {
             showFlash("Screenshot");
+          }else if (action === "scroll_up") {
+            showFlash("Scroll Up");
+          } else if (action === "scroll_down") {
+            showFlash("Scroll Down");
           }
           showGestureAction(action);
 

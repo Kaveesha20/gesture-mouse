@@ -17,13 +17,15 @@ Webcam → MediaPipe (21 landmarks × x,y) → GestureNet (PyTorch) → Mouse Ac
 
 ## 🖐️ Supported Gestures
 
-| Key | Gesture      | Action                 |
-| --- | ------------ | ---------------------- |
-| `0` | move         | Move mouse cursor      |
-| `1` | left_click   | Left click             |
-| `2` | right_click  | Right click            |
-| `3` | double_click | Double click           |
-| `4` | screenshot   | Take & save screenshot |
+| Key | Gesture      | Hand Pose                        | Action                 |
+| --- | ------------ | -------------------------------- | ---------------------- |
+| `0` | move         | Index finger up                  | Move mouse cursor      |
+| `1` | left_click   | Thumb + Index pinch              | Left click             |
+| `2` | right_click  | Index + Pinky up                 | Right click            |
+| `3` | double_click | All fingers bent (fist)          | Double click           |
+| `4` | screenshot   | All fingers extended (open hand) | Take & save screenshot |
+| `5` | scroll_up    | Index + Middle up (peace sign)   | Scroll up              |
+| `6` | scroll_down  | Index + Middle + Ring up         | Scroll down            |
 
 ---
 
@@ -49,7 +51,7 @@ This starts the backend server, serves the UI, and opens your browser to `http:/
 
 | Tab | Replaces | What to do |
 | --- | -------- | ---------- |
-| **Data Collection** | `collect_data.py` | Select gesture 0–4 → **Start Recording** → collect ~250 samples → **Save to Server** |
+| **Data Collection** | `collect_data.py` | Select gesture 0–6 → **Start Recording** → collect ~250 samples → **Save to Server** |
 | **Train Model** | `train.py` | Click **Train & Update Model** — merges new data into `gesture_data.csv`, retrains, and hot-reloads the model |
 | **Playground** | `main.py` | Test gestures visually; the server also controls your real mouse while running |
 
@@ -87,7 +89,7 @@ gesture-mouse/
 ### Training (UI)
 
 - Trains `GestureNet` on the full server dataset
-- Architecture: `42 → 128 → 64 → 5` (ReLU + Dropout)
+- Architecture: `42 → 128 → 64 → 7` (ReLU + Dropout)
 - Saves `gesture_model.pth` and `label_encoder.pkl`
 - Model is hot-reloaded for live inference immediately
 
@@ -96,6 +98,7 @@ gesture-mouse/
 - Each frame → MediaPipe → 42 landmarks → `GestureNet.predict()`
 - If **confidence > 85%**, the gesture action fires
 - Mouse movement via `ctypes` (Windows), clicks via `pynput`
+- Scroll via `pyautogui.scroll()`
 - Action cooldown: **0.5s**
 
 ---
@@ -105,7 +108,7 @@ gesture-mouse/
 ```
 Input (42)  →  Linear(128)  →  ReLU  →  Dropout(0.3)
             →  Linear(64)   →  ReLU  →  Dropout(0.2)
-            →  Linear(5)    →  Softmax  →  Predicted Gesture
+            →  Linear(7)    →  Softmax  →  Predicted Gesture
 ```
 
 ---
@@ -119,7 +122,9 @@ Input (42)  →  Linear(128)  →  ReLU  →  Dropout(0.3)
 | right_click (2)  | 250      |
 | double_click (3) | 250      |
 | screenshot (4)   | 251      |
-| **Total**        | **1253** |
+| scroll_up (5)    | ~250     |
+| scroll_down (6)  | ~250     |
+| **Total**        | **~1753**|
 
 New samples saved from the UI are appended to this file.
 
@@ -135,19 +140,20 @@ New samples saved from the UI are appended to this file.
 
 ## 🔧 Troubleshooting
 
-| Problem            | Fix                                              |
-| ------------------ | ------------------------------------------------ |
-| UI won't connect   | Make sure `python run_ui.py` is running          |
-| Model: not trained | Collect data in UI, then use Train Model tab     |
-| Mouse doesn't move | Keep `demo_server.py` running (started by `run_ui.py`) |
-| Low accuracy       | Collect more samples per gesture, improve lighting |
-| Hand not detected  | Improve lighting, keep hand fully in frame       |
-| Clicks too fast    | Increase `COOLDOWN` in `demo_server.py`          |
+| Problem              | Fix                                                        |
+| -------------------- | ---------------------------------------------------------- |
+| UI won't connect     | Make sure `python run_ui.py` is running                    |
+| Model: not trained   | Collect data in UI, then use Train Model tab               |
+| Mouse doesn't move   | Keep `demo_server.py` running (started by `run_ui.py`)     |
+| Low accuracy         | Collect more samples per gesture, improve lighting         |
+| Hand not detected    | Improve lighting, keep hand fully in frame                 |
+| Clicks too fast      | Increase `COOLDOWN` in `demo_server.py`                    |
+| Scroll not working   | Make sure model was retrained after adding gestures 5 & 6  |
 
 ---
 
 ## 📌 Future Ideas
 
-- Add scroll gesture
 - Support two-hand gestures
+- Add drag gesture
 - Package as `.exe` with PyInstaller
