@@ -92,7 +92,7 @@ GESTURE_NAMES = {
 
 connected_clients = set()
 last_action_time = 0
-COOLDOWN = 0.5
+COOLDOWN = 2.0
 
 
 def get_dataset_info():
@@ -182,23 +182,30 @@ def perform_action(gesture, processed, confidence):
             avg_x = int(sum(smooth_x) / len(smooth_x))
             avg_y = int(sum(smooth_y) / len(smooth_y))
             ctypes.windll.user32.SetCursorPos(avg_x, avg_y)
-        return
+        return "move"
 
     if confidence < 0.85 or (now - last_action_time) < COOLDOWN:
-        return
+        return None
 
     if gesture == '1':
         mouse.click(Button.left)
+        action = "left_click"
     elif gesture == '2':
         mouse.click(Button.right)
+        action = "right_click"
     elif gesture == '3':
         pyautogui.doubleClick()
+        action = "double_click"
     elif gesture == '4':
         img = pyautogui.screenshot()
         img.save(f"screenshot_{random.randint(1, 1000)}.png")
         print("Screenshot saved")
+        action = "screenshot"
+    else:
+        return None
 
     last_action_time = now
+    return action
 
 
 # ====================== DATA & TRAINING ======================
@@ -362,19 +369,7 @@ async def camera_loop():
         if len(landmark_list) == 42:
             gesture_label, confidence = predict_gesture(landmark_list)
             if gesture_label is not None:
-                perform_action(gesture_label, processed, confidence)
-
-                if gesture_label == '0':
-                    action = "move"
-                elif confidence > 0.85:
-                    if gesture_label == '1':
-                        action = "left_click"
-                    elif gesture_label == '2':
-                        action = "right_click"
-                    elif gesture_label == '3':
-                        action = "double_click"
-                    elif gesture_label == '4':
-                        action = "screenshot"
+                action = perform_action(gesture_label, processed, confidence)
 
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         frame_base64 = base64.b64encode(buffer).decode('utf-8')

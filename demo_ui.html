@@ -345,56 +345,169 @@
       #canvas-area {
         position: relative;
         overflow: hidden;
-        /* cursor: none; */
+        cursor: none;
+        background:
+          linear-gradient(rgba(49, 208, 170, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(49, 208, 170, 0.05) 1px, transparent 1px),
+          #091017;
+        background-size: 42px 42px;
       }
 
-      #scroll-content {
+      #play-surface {
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        transform: translateY(0px);
-        transition: transform 0.2s ease;
-      }
-
-      #zoom-container {
-        transform: scale(1);
-        transform-origin: center top;
-        transition: transform 0.2s ease;
-        padding: 1.2rem;
-      }
-
-      .big-card,
-      .card {
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        background: rgba(17, 24, 31, 0.92);
-      }
-
-      .big-card {
-        text-align: center;
-        padding: 1.4rem;
-        margin-bottom: 0.9rem;
-      }
-
-      .card-grid {
+        inset: 0;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.7rem;
-        margin-bottom: 0.9rem;
-      }
-
-      .card {
+        grid-template-columns: minmax(280px, 1fr) minmax(320px, 420px);
+        gap: 1rem;
         padding: 1rem;
-        min-height: 112px;
-        transition:
-          transform 0.2s,
-          border-color 0.2s;
       }
 
-      .card.highlighted {
+      .play-panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(17, 24, 31, 0.9);
+        padding: 1rem;
+      }
+
+      .cursor-stage {
+        position: relative;
+        min-height: 100%;
+      }
+
+      .movement-target {
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        width: min(220px, 55%);
+        aspect-ratio: 1;
+        border: 1px dashed #345063;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        padding: 1rem;
+        background: rgba(12, 19, 26, 0.72);
+      }
+
+      .movement-target.inside {
         border-color: var(--accent);
-        transform: scale(1.02);
+        color: var(--accent);
+        background: rgba(49, 208, 170, 0.11);
+      }
+
+      .cursor-stage h2,
+      .actions-panel h2 {
+        font-size: 18px;
+        margin-bottom: 0.45rem;
+      }
+
+      #cursor-readout {
+        position: absolute;
+        left: 1rem;
+        bottom: 1rem;
+        color: var(--muted);
+        font-family: Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+        margin-top: 0.9rem;
+      }
+
+      .action-tile {
+        min-height: 92px;
+        border: 1px solid #2b3a49;
+        border-radius: 8px;
+        background: #101923;
+        padding: 0.85rem;
+        transition:
+          border-color 0.15s,
+          background 0.15s,
+          transform 0.15s;
+      }
+
+      .action-tile strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 0.35rem;
+        font-size: 14px;
+      }
+
+      .action-tile span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .action-tile.active {
+        border-color: var(--accent);
+        background: rgba(49, 208, 170, 0.13);
+        transform: translateY(-2px);
+      }
+
+      .test-widget {
+        margin-top: 0.65rem;
+        border: 1px solid #263747;
+        border-radius: 8px;
+        padding: 0.6rem;
+        color: var(--muted);
+        font-size: 12px;
+        background: #0c131a;
+      }
+
+      .click-target {
+        width: 100%;
+        margin-top: 0.55rem;
+        border-color: #355264;
+        background: #14202a;
+      }
+
+      .click-target.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(49, 208, 170, 0.14);
+      }
+
+      .context-menu-demo {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .context-menu-demo div {
+        padding: 0.35rem 0.45rem;
+        border-radius: 6px;
+        background: #111b24;
+      }
+
+      .counter-value {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 28px;
+        margin-left: 0.4rem;
+        border-radius: 7px;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+
+      #screenshot-preview {
+        margin-top: 0.9rem;
+        min-height: 120px;
+        border: 1px dashed #334252;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 13px;
+        background: #0c131a;
       }
 
       #cursor {
@@ -477,9 +590,6 @@
         #data-page {
           grid-template-columns: 1fr;
         }
-        .card-grid {
-          grid-template-columns: 1fr;
-        }
         #camera-panel {
           width: 220px;
           right: 0.7rem;
@@ -487,6 +597,10 @@
         }
         #camera-view {
           height: 130px;
+        }
+        #play-surface {
+          grid-template-columns: 1fr;
+          overflow-y: auto;
         }
       }
     </style>
@@ -505,15 +619,14 @@
       <span class="step active" data-step="data-page"
         >1. Collect data (per gesture)</span
       >
-      <span class="step" data-step="train-page">2. Train &amp; update model</span>
-      <span class="step" data-step="play-page">3. Playground / live control</span>
+      <span class="step" data-step="train-page"
+        >2. Train &amp; update model</span
+      >
+      <span class="step" data-step="play-page"
+        >3. Playground / live control</span
+      >
     </div>
 
-    <div id="tabs">
-      <button class="tab active" data-page="data-page">Data Collection</button>
-      <button class="tab" data-page="train-page">Train Model</button>
-      <button class="tab" data-page="play-page">Playground</button>
-    </div>
     <div
       class="page"
       id="train-page"
@@ -531,8 +644,8 @@
         <div class="panel">
           <h3>Hyperparameters</h3>
           <p class="muted" style="margin-bottom: 0.7rem">
-            Replaces <code>train.py</code>. Trains on the full server dataset and
-            hot-reloads the live model — no separate script needed.
+            Replaces <code>train.py</code>. Trains on the full server dataset
+            and hot-reloads the live model — no separate script needed.
           </p>
           <label for="train-epochs">Epochs</label>
           <input id="train-epochs" type="number" min="1" max="200" value="30" />
@@ -568,7 +681,11 @@
           <div class="muted" id="train-dataset-status">
             Server dataset: 0 rows | Buffer: 0 rows
           </div>
-          <div class="muted" id="train-label-breakdown" style="margin-top: 0.4rem">
+          <div
+            class="muted"
+            id="train-label-breakdown"
+            style="margin-top: 0.4rem"
+          >
             Label counts: —
           </div>
         </div>
@@ -740,44 +857,60 @@
       </div>
 
       <div id="canvas-area">
-        <div id="scroll-content">
-          <div id="zoom-container">
-            <div class="big-card">
-              <h2>Gesture Playground</h2>
+        <div id="play-surface">
+          <section class="play-panel cursor-stage">
+              <h2>Cursor Movement</h2>
               <p class="muted">
-                Move your hand and test all gesture actions in this sandbox.
+                Gesture 0 moves the live pointer here and controls the real
+                mouse through the Python server.
               </p>
-            </div>
+              <div class="movement-target" id="movement-target">
+                Move cursor into this target
+              </div>
+              <div id="cursor-readout">x: 0.5000 | y: 0.5000</div>
+          </section>
 
-            <div class="card-grid">
-              <div class="card">
-                Neural network predicts 5 gesture classes in real time.
+          <section class="play-panel actions-panel">
+            <h2>Gesture Actions</h2>
+            <p class="muted">
+              Each tile lights up when the matching original gesture action is
+              received from the server.
+            </p>
+            <div class="action-grid">
+              <div class="action-tile" data-action="left_click">
+                <strong>1. Left Click</strong>
+                <span>Performs a normal left mouse click.</span>
+                <button class="click-target" id="left-click-target" type="button">
+                  Test Button
+                </button>
               </div>
-              <div class="card">
-                MediaPipe tracks 21 hand landmarks each frame.
+              <div class="action-tile" data-action="right_click">
+                <strong>2. Right Click</strong>
+                <span>Opens the standard right-click context action.</span>
+                <div class="test-widget context-menu-demo" id="context-demo">
+                  <div>Open</div>
+                  <div>Copy</div>
+                  <div>Properties</div>
+                </div>
               </div>
-              <div class="card">
-                WebSocket keeps the browser synced with your Python server.
+              <div class="action-tile" data-action="double_click">
+                <strong>3. Double Click</strong>
+                <span>Runs a double click at the current cursor position.</span>
+                <div class="test-widget">
+                  Double-click count
+                  <span class="counter-value" id="double-click-count">0</span>
+                </div>
               </div>
-              <div class="card">
-                Confidence gate protects against accidental actions.
-              </div>
-              <div class="card">
-                Replay and tune your gesture style visually.
-              </div>
-              <div class="card">
-                Collect and train from the UI — no CLI scripts required.
+              <div class="action-tile" data-action="screenshot">
+                <strong>4. Screenshot</strong>
+                <span>Triggers the screenshot command in the server app.</span>
+                <div class="test-widget" id="screenshot-count">
+                  Captures: 0
+                </div>
               </div>
             </div>
-
-            <div class="big-card">
-              <h2>Live mouse control</h2>
-              <p class="muted">
-                Replaces <code>main.py</code>. While this app is running, gestures
-                also control your real mouse cursor and clicks on screen.
-              </p>
-            </div>
-          </div>
+            <div id="screenshot-preview">Screenshot gesture waiting...</div>
+          </section>
         </div>
         <div id="cursor"></div>
       </div>
@@ -807,7 +940,6 @@
       const wsLabel = document.getElementById("ws-label");
       const modelStatus = document.getElementById("model-status");
       const workflowSteps = document.querySelectorAll(".step");
-      // New Training Form Elements
       const trainPage = document.getElementById("train-page");
       const startTrainBtn = document.getElementById("start-train-btn");
       const trainEpochsInput = document.getElementById("train-epochs");
@@ -844,9 +976,14 @@
       const liveLmCount = document.getElementById("live-lm-count");
 
       const canvasArea = document.getElementById("canvas-area");
-      const scrollContent = document.getElementById("scroll-content");
-      const zoomContainer = document.getElementById("zoom-container");
       const cursor = document.getElementById("cursor");
+      const cursorReadout = document.getElementById("cursor-readout");
+      const movementTarget = document.getElementById("movement-target");
+      const actionTiles = document.querySelectorAll(".action-tile");
+      const leftClickTarget = document.getElementById("left-click-target");
+      const doubleClickCount = document.getElementById("double-click-count");
+      const screenshotCount = document.getElementById("screenshot-count");
+      const screenshotPreview = document.getElementById("screenshot-preview");
       const gesturePill = document.getElementById("gesture-pill");
       const confBar = document.getElementById("conf-bar");
       const confText = document.getElementById("conf-text");
@@ -856,14 +993,7 @@
       const cameraStatus = document.getElementById("camera-status");
       const cameraToggle = document.getElementById("camera-toggle");
 
-      let scrollY = 0;
-      let zoomLevel = 1.0;
-      const MAX_ZOOM = 2.0;
-      const MIN_ZOOM = 0.6;
-      const ZOOM_STEP = 0.1;
-      const SCROLL_STEP = 80;
       let flashTimeout = null;
-      let lastHighlighted = null;
 
       let recording = false;
       let localRows = [];
@@ -874,6 +1004,8 @@
       let trainingInProgress = false;
       let pendingRetrainAfterSave = false;
       let modelReady = false;
+      let doubleClickTotal = 0;
+      let screenshotTotal = 0;
 
       const gestureNames = {
         0: "move",
@@ -903,10 +1035,7 @@
         return (
           "Label counts: " +
           keys
-            .map(
-              (k) =>
-                `${k} ${gestureNames[k] || ""} (${labels[k]})`.trim(),
-            )
+            .map((k) => `${k} ${gestureNames[k] || ""} (${labels[k]})`.trim())
             .join(", ")
         );
       }
@@ -1033,32 +1162,42 @@
         );
       }
 
-      function updateScroll() {
-        const maxScroll = scrollContent.scrollHeight - canvasArea.clientHeight;
-        scrollY = Math.max(0, Math.min(scrollY, maxScroll > 0 ? maxScroll : 0));
-        scrollContent.style.transform = `translateY(-${scrollY}px)`;
-      }
+      function showGestureAction(action) {
+        if (!action || action === "none") return;
 
-      function updateZoom() {
-        zoomContainer.style.transform = `scale(${zoomLevel})`;
-      }
-
-      function highlightCardUnderCursor(cx, cy) {
-        const cards = document.querySelectorAll(".card");
-        if (lastHighlighted) lastHighlighted.classList.remove("highlighted");
-        lastHighlighted = null;
-        cards.forEach((card) => {
-          const rect = card.getBoundingClientRect();
-          if (
-            cx >= rect.left &&
-            cx <= rect.right &&
-            cy >= rect.top &&
-            cy <= rect.bottom
-          ) {
-            card.classList.add("highlighted");
-            lastHighlighted = card;
+        actionTiles.forEach((tile) => {
+          const active = tile.dataset.action === action;
+          tile.classList.toggle("active", active);
+          if (active) {
+            setTimeout(() => tile.classList.remove("active"), 700);
           }
         });
+
+        if (action === "left_click") {
+          leftClickTarget.classList.add("active");
+          leftClickTarget.textContent = "Clicked";
+          setTimeout(() => {
+            leftClickTarget.classList.remove("active");
+            leftClickTarget.textContent = "Test Button";
+          }, 700);
+        }
+
+        if (action === "double_click") {
+          doubleClickTotal += 1;
+          doubleClickCount.textContent = String(doubleClickTotal);
+        }
+
+        if (action === "screenshot") {
+          screenshotTotal += 1;
+          screenshotCount.textContent = `Captures: ${screenshotTotal}`;
+          screenshotPreview.textContent =
+            "Screenshot gesture triggered at " + new Date().toLocaleTimeString();
+        }
+      }
+
+      function pulseCursor() {
+        cursor.classList.add("clicking");
+        setTimeout(() => cursor.classList.remove("clicking"), 260);
       }
 
       toggleRecordBtn.addEventListener("click", () => {
@@ -1140,7 +1279,9 @@
           addTrainLog("No dataset on server. Collect samples first.", true);
           return;
         } else {
-          addTrainLog(`Training on server dataset (${serverTotalRows} rows)...`);
+          addTrainLog(
+            `Training on server dataset (${serverTotalRows} rows)...`,
+          );
         }
 
         trainingInProgress = true;
@@ -1192,16 +1333,12 @@
             saveServerBtn.disabled = false;
             if (data.status === "completed") {
               logLine(data.message);
-              if (typeof data.total === "number") {
-                serverTotalRows = data.total;
-              }
               localRows = [];
               sessionRows = [];
               recording = false;
               toggleRecordBtn.textContent = "Start Recording";
               recordingStatus.textContent = "Status: idle";
               updateProgress();
-              updateDatasetDisplays();
               if (pendingRetrainAfterSave) {
                 pendingRetrainAfterSave = false;
                 setTab("train-page");
@@ -1275,20 +1412,31 @@
           const py = cursor_y * canvasArea.clientHeight;
           cursor.style.left = `${px}px`;
           cursor.style.top = `${py}px`;
+          cursorReadout.textContent = `x: ${cursor_x.toFixed(4)} | y: ${cursor_y.toFixed(4)}`;
+          const targetRect = movementTarget.getBoundingClientRect();
+          const areaRect = canvasArea.getBoundingClientRect();
+          const screenX = areaRect.left + px;
+          const screenY = areaRect.top + py;
+          movementTarget.classList.toggle(
+            "inside",
+            screenX >= targetRect.left &&
+              screenX <= targetRect.right &&
+              screenY >= targetRect.top &&
+              screenY <= targetRect.bottom,
+          );
 
           if (action === "left_click") {
-            cursor.classList.add("clicking");
-            setTimeout(() => cursor.classList.remove("clicking"), 260);
+            pulseCursor();
             showFlash("Left Click");
           } else if (action === "right_click") {
             showFlash("Right Click");
           } else if (action === "double_click") {
-            cursor.classList.add("clicking");
-            setTimeout(() => cursor.classList.remove("clicking"), 260);
+            pulseCursor();
             showFlash("Double Click");
           } else if (action === "screenshot") {
             showFlash("Screenshot");
           }
+          showGestureAction(action);
 
           if (recording && landmarks.length === 42) {
             const row = [
@@ -1305,8 +1453,7 @@
           }
 
           if (frame || data.frame) {
-            cameraView.src =
-              "data:image/jpeg;base64," + (frame || data.frame);
+            cameraView.src = "data:image/jpeg;base64," + (frame || data.frame);
           }
         };
       }
