@@ -1,6 +1,7 @@
 import cv2
 import csv
 import os
+from matplotlib.pylab import rint
 import mediapipe as mp
 
 mpHands = mp.solutions.hands
@@ -18,7 +19,9 @@ GESTURES = {
     '1': 'left_click',
     '2': 'right_click',
     '3': 'double_click',
-    '4': 'screenshot'
+    '4': 'screenshot',
+    '5': 'scroll_up',      
+    '6': 'scroll_down',
 }
 
 OUTPUT_FILE = 'gesture_data.csv'
@@ -37,7 +40,7 @@ def main():
     count = 0
 
     print("=== Data Collection ===")
-    print("Press 0-4 to select gesture, SPACE to start/stop, Q to quit")
+    print("Press 0-6 to select gesture, SPACE to start/stop, Q to quit")
     for k, v in GESTURES.items():
         print(f"  {k} = {v}")
 
@@ -109,7 +112,7 @@ def main():
             print(f"Selected: {GESTURES[current_gesture]} — press SPACE to record")
         elif key == ord(' '):
             if current_gesture is None:
-                print("Select a gesture first (0-4)")
+                print("Press 0-6 to select gesture, SPACE to start/stop, Q to quit")
             else:
                 recording = not recording
                 if recording:

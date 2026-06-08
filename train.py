@@ -52,7 +52,7 @@ class GestureNet(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Dropout(0.2),
-            nn.Linear(64, 5)   # 5 gesture classes
+            nn.Linear(64, 7)   # 7 gesture classes
         )
 
     def forward(self, x):

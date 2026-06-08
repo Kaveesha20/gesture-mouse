@@ -38,7 +38,7 @@ class GestureNet(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(42, 128), nn.ReLU(), nn.Dropout(0.3),
             nn.Linear(128, 64), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(64, 5)
+            nn.Linear(64, 7)
         )
 
     def forward(self, x):
@@ -88,6 +88,7 @@ draw = mp.solutions.drawing_utils
 GESTURE_NAMES = {
     '0': 'Move Mouse', '1': 'Left Click', '2': 'Right Click',
     '3': 'Double Click', '4': 'Screenshot',
+    '5': 'Scroll Up', '6': 'Scroll Down', 
 }
 
 connected_clients = set()
@@ -201,6 +202,12 @@ def perform_action(gesture, processed, confidence):
         img.save(f"screenshot_{random.randint(1, 1000)}.png")
         print("Screenshot saved")
         action = "screenshot"
+    elif gesture == '5':
+        pyautogui.scroll(3)
+        action = "scroll_up"
+    elif gesture == '6':
+        pyautogui.scroll(-3)
+        action = "scroll_down"    
     else:
         return None
 
