@@ -24,8 +24,8 @@ Webcam → MediaPipe (21 landmarks × x,y) → GestureNet (PyTorch) → Mouse Ac
 | `2` | right_click  | Index + Pinky up                 | Right click            |
 | `3` | double_click | All fingers bent (fist)          | Double click           |
 | `4` | screenshot   | All fingers extended (open hand) | Take & save screenshot |
-| `5` | scroll_up    | Index + Middle up (peace sign)   | Scroll up              |
-| `6` | scroll_down  | Index + Middle + Ring up         | Scroll down            |
+| `5` | scroll_up    | pinky up                         | Scroll up              |
+| `6` | scroll_down  | Thumb up                         | Scroll down            |
 
 ---
 
@@ -111,22 +111,6 @@ Input (42)  →  Linear(128)  →  ReLU  →  Dropout(0.3)
             →  Linear(7)    →  Softmax  →  Predicted Gesture
 ```
 
----
-
-## 📊 Dataset
-
-| Gesture          | Samples  |
-| ---------------- | -------- |
-| move (0)         | 251      |
-| left_click (1)   | 251      |
-| right_click (2)  | 250      |
-| double_click (3) | 250      |
-| screenshot (4)   | 251      |
-| scroll_up (5)    | ~250     |
-| scroll_down (6)  | ~250     |
-| **Total**        | **~1753**|
-
-New samples saved from the UI are appended to this file.
 
 ---
 
