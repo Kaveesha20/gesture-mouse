@@ -1,0 +1,13 @@
+                  precision    recall  f1-score   support
+
+        0 (move)     1.0000    1.0000    1.0000       200
+  1 (left_click)     1.0000    1.0000    1.0000       200
+ 2 (right_click)     1.0000    1.0000    1.0000       200
+3 (double_click)     1.0000    1.0000    1.0000       250
+  4 (screenshot)     1.0000    1.0000    1.0000       200
+   5 (scroll_up)     1.0000    1.0000    1.0000       200
+ 6 (scroll_down)     1.0000    1.0000    1.0000       200
+
+        accuracy                         1.0000      1450
+       macro avg     1.0000    1.0000    1.0000      1450
+    weighted avg     1.0000    1.0000    1.0000      1450
