@@ -52,34 +52,81 @@
 
       #mode-switch {
         display: flex;
-        gap: 0.45rem;
         align-items: center;
+        gap: 0.8rem;
       }
 
-      .mode-btn {
-        border: 1px solid #2a3642;
+      .mode-label {
+        font-size: 11px;
+        font-weight: 500;
         color: var(--muted);
-        background: #121a22;
-        border-radius: 999px;
-        padding: 0.38rem 0.8rem;
-        font-size: 12px;
-        cursor: pointer;
-        transition: 0.2s;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        transition: color 0.2s;
       }
 
-      .mode-btn.active {
-        background: rgba(49, 208, 170, 0.12);
-        border-color: var(--accent);
+      .mode-default {
         color: var(--accent);
       }
 
-      #mode-status {
+      .mode-customize {
         color: var(--muted);
-        font-size: 12px;
+      }
+
+      .mode-customize.active {
+        color: var(--accent);
+      }
+
+      .mode-default.inactive {
+        color: var(--muted);
+      }
+
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 22px;
+      }
+
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #2a3642;
+        transition: 0.3s;
+        border-radius: 22px;
         border: 1px solid #2a3642;
-        border-radius: 999px;
-        padding: 0.28rem 0.7rem;
-        background: rgba(18, 26, 34, 0.7);
+      }
+
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 2px;
+        background-color: #7f96ac;
+        transition: 0.3s;
+        border-radius: 50%;
+      }
+
+      input:checked + .slider {
+        background-color: rgba(49, 208, 170, 0.2);
+        border-color: var(--accent);
+      }
+
+      input:checked + .slider:before {
+        transform: translateX(22px);
+        background-color: var(--accent);
       }
 
       #conn {
@@ -648,13 +695,12 @@
     <div id="topbar">
       <div id="brand">Gesture Lab</div>
       <div id="mode-switch">
-        <button class="mode-btn active" id="default-mode-btn" type="button">
-          Default Mode
-        </button>
-        <button class="mode-btn" id="custom-mode-btn" type="button">
-          Custom Mode
-        </button>
-        <span id="mode-status">gesture_data.csv</span>
+        <span class="mode-label mode-default">Default Mode</span>
+        <label class="switch">
+          <input type="checkbox" id="mode-toggle">
+          <span class="slider"></span>
+        </label>
+        <span class="mode-label mode-customize">Custom Mode</span>
       </div>
       <div id="conn">
         <span id="model-status" class="missing">Model: not trained</span>
@@ -804,13 +850,6 @@
             samples, save to the active dataset, and repeat for all 7 gestures
             (0–6).
           </p>
-          <div
-            class="muted"
-            id="collection-mode-label"
-            style="margin-bottom: 0.7rem"
-          >
-            Active dataset: gesture_data.csv
-          </div>
           <label for="label-select">Target Label</label>
           <select id="label-select">
             <option value="0">0 - move</option>
@@ -1019,12 +1058,9 @@
       const dot = document.getElementById("dot");
       const wsLabel = document.getElementById("ws-label");
       const modelStatus = document.getElementById("model-status");
-      const defaultModeBtn = document.getElementById("default-mode-btn");
-      const customModeBtn = document.getElementById("custom-mode-btn");
-      const modeStatus = document.getElementById("mode-status");
-      const collectionModeLabel = document.getElementById(
-        "collection-mode-label",
-      );
+      const modeToggle = document.getElementById("mode-toggle");
+      const modeDefaultLabel = document.querySelector(".mode-default");
+      const modeCustomLabel = document.querySelector(".mode-customize");
       const workflowSteps = document.querySelectorAll(".step");
       const trainPage = document.getElementById("train-page");
       const startTrainBtn = document.getElementById("start-train-btn");
@@ -1156,9 +1192,10 @@
       }
 
       function updateModeButtons() {
-        defaultModeBtn.classList.toggle("active", currentMode === "default");
-        customModeBtn.classList.toggle("active", currentMode === "custom");
-        modeStatus.textContent = currentDatasetFile;
+        const isCustom = currentMode === "custom";
+        modeToggle.checked = isCustom;
+        modeDefaultLabel.classList.toggle("inactive", isCustom);
+        modeCustomLabel.classList.toggle("active", isCustom);
       }
 
       function updateModeVisibility() {
@@ -1259,8 +1296,10 @@
         btn.addEventListener("click", () => setTab(btn.dataset.page));
       });
 
-      defaultModeBtn.addEventListener("click", () => applyMode("default", true));
-      customModeBtn.addEventListener("click", () => applyMode("custom", true));
+      modeToggle.addEventListener("change", () => {
+        const newMode = modeToggle.checked ? "custom" : "default";
+        applyMode(newMode, true);
+      });
 
       workflowSteps.forEach((step) => {
         step.addEventListener("click", () => setTab(step.dataset.step));
