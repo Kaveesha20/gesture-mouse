@@ -281,6 +281,15 @@ def perform_action(gesture, processed, confidence):
             ctypes.windll.user32.SetCursorPos(avg_x, avg_y)
         return "move"
 
+    # Scrolling gestures (5, 6) have no cooldown
+    if gesture == '5':
+        pyautogui.scroll(20)
+        return "scroll_up"
+    elif gesture == '6':
+        pyautogui.scroll(-20)
+        return "scroll_down"
+
+    # Other gestures (1, 2, 3, 4) require cooldown and confidence check
     if confidence < 0.85 or (now - last_action_time) < COOLDOWN:
         return None
 
@@ -298,12 +307,6 @@ def perform_action(gesture, processed, confidence):
         img.save(f"screenshot_{random.randint(1, 1000)}.png")
         print("Screenshot saved")
         action = "screenshot"
-    elif gesture == '5':
-        pyautogui.scroll(3)
-        action = "scroll_up"
-    elif gesture == '6':
-        pyautogui.scroll(-3)
-        action = "scroll_down"    
     else:
         return None
 
