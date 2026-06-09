@@ -17,18 +17,12 @@
         --bad: #ff6262;
       }
 
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
 
       body {
         min-height: 100vh;
         font-family: "Segoe UI", sans-serif;
-        background:
-          radial-gradient(circle at 15% 10%, #102336 0%, var(--bg) 45%),
-          var(--bg);
+        background: radial-gradient(circle at 15% 10%, #102336 0%, var(--bg) 45%), var(--bg);
         color: var(--text);
         overflow: auto;
         display: flex;
@@ -45,42 +39,69 @@
         backdrop-filter: blur(6px);
       }
 
-      #brand {
-        font-weight: 700;
-        letter-spacing: 0.4px;
-      }
+      #brand { font-weight: 700; letter-spacing: 0.4px; }
 
-      #mode-switch {
-        display: flex;
-        gap: 0.45rem;
-        align-items: center;
-      }
+      /* ── Mode Toggle Switch ── */
+      #mode-switch { display: flex; align-items: center; gap: 0.6rem; }
 
-      .mode-btn {
-        border: 1px solid #2a3642;
+      .toggle-label {
+        font-size: 12px;
         color: var(--muted);
+      }
+
+      .mode-toggle-track {
+        position: relative;
+        width: 160px;
+        height: 32px;
         background: #121a22;
-        border-radius: 999px;
-        padding: 0.38rem 0.8rem;
-        font-size: 12px;
-        cursor: pointer;
-        transition: 0.2s;
-      }
-
-      .mode-btn.active {
-        background: rgba(49, 208, 170, 0.12);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      #mode-status {
-        color: var(--muted);
-        font-size: 12px;
         border: 1px solid #2a3642;
         border-radius: 999px;
-        padding: 0.28rem 0.7rem;
-        background: rgba(18, 26, 34, 0.7);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        padding: 3px;
+        transition: border-color 0.2s;
       }
+
+      .mode-toggle-track:hover { border-color: var(--accent); }
+
+      .mode-toggle-thumb {
+        position: absolute;
+        width: 50%;
+        height: calc(100% - 6px);
+        background: rgba(49, 208, 170, 0.18);
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        left: 3px;
+        transition: left 0.22s cubic-bezier(.4,0,.2,1);
+      }
+
+      .mode-toggle-track.custom .mode-toggle-thumb {
+        left: calc(50% - 0px);
+      }
+
+      .mode-toggle-labels {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        pointer-events: none;
+      }
+
+      .mode-toggle-labels span {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        z-index: 1;
+        transition: color 0.2s;
+      }
+
+      .mode-toggle-track .mode-toggle-labels span:first-child { color: var(--accent); }
+      .mode-toggle-track .mode-toggle-labels span:last-child  { color: var(--muted); }
+      .mode-toggle-track.custom .mode-toggle-labels span:first-child { color: var(--muted); }
+      .mode-toggle-track.custom .mode-toggle-labels span:last-child  { color: var(--accent); }
 
       #conn {
         margin-left: auto;
@@ -97,16 +118,8 @@
         border: 1px solid #334252;
         font-size: 12px;
       }
-
-      #model-status.ready {
-        color: var(--accent);
-        border-color: var(--accent);
-      }
-
-      #model-status.missing {
-        color: var(--warn);
-        border-color: #735327;
-      }
+      #model-status.ready  { color: var(--accent); border-color: var(--accent); }
+      #model-status.missing { color: var(--warn); border-color: #735327; }
 
       #workflow {
         display: flex;
@@ -125,28 +138,11 @@
         padding: 0.3rem 0.7rem;
         background: #101923;
       }
+      .step.active { color: var(--accent); border-color: var(--accent); background: rgba(49, 208, 170, 0.1); }
 
-      .step.active {
-        color: var(--accent);
-        border-color: var(--accent);
-        background: rgba(49, 208, 170, 0.1);
-      }
-
-      .dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #586575;
-      }
-
-      .dot.connected {
-        background: var(--accent);
-        box-shadow: 0 0 10px var(--accent);
-      }
-
-      .dot.disconnected {
-        background: var(--bad);
-      }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: #586575; }
+      .dot.connected    { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+      .dot.disconnected { background: var(--bad); }
 
       #tabs {
         display: flex;
@@ -166,30 +162,14 @@
         cursor: pointer;
         transition: 0.2s;
       }
+      .tab.active { background: rgba(49, 208, 170, 0.12); border-color: var(--accent); color: var(--accent); }
 
-      .tab.active {
-        background: rgba(49, 208, 170, 0.12);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
+      .hidden { display: none !important; }
 
-      .hidden {
-        display: none !important;
-      }
+      .page { display: none; flex: 1; overflow-y: auto; }
+      .page.active { display: grid; }
 
-      .page {
-        display: none;
-        flex: 1;
-        overflow-y: auto;
-      }
-
-      .page.active {
-        display: grid;
-      }
-
-      #data-page {
-        grid-template-columns: 360px 1fr;
-      }
+      #data-page { grid-template-columns: 360px 1fr; }
 
       #controls {
         background: rgba(17, 24, 31, 0.92);
@@ -205,27 +185,13 @@
         padding: 0.9rem;
         margin-bottom: 0.85rem;
       }
+      .panel h3 { font-size: 14px; margin-bottom: 0.55rem; }
 
-      .panel h3 {
-        font-size: 14px;
-        margin-bottom: 0.55rem;
-      }
+      .muted { color: var(--muted); font-size: 13px; line-height: 1.45; }
 
-      .muted {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.45;
-      }
+      label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 0.35rem; }
 
-      label {
-        display: block;
-        font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 0.35rem;
-      }
-
-      select,
-      input {
+      select, input {
         width: 100%;
         padding: 0.55rem 0.65rem;
         background: #0f1620;
@@ -235,11 +201,7 @@
         margin-bottom: 0.7rem;
       }
 
-      .row {
-        display: flex;
-        gap: 0.55rem;
-        flex-wrap: wrap;
-      }
+      .row { display: flex; gap: 0.55rem; flex-wrap: wrap; }
 
       button {
         background: #12202b;
@@ -250,33 +212,11 @@
         cursor: pointer;
         font-size: 12px;
       }
+      button.primary { background: rgba(49, 208, 170, 0.16); border-color: var(--accent); color: var(--accent); }
+      button.warn    { color: var(--warn); border-color: #735327; background: rgba(115, 83, 39, 0.15); }
 
-      button.primary {
-        background: rgba(49, 208, 170, 0.16);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      button.warn {
-        color: var(--warn);
-        border-color: #735327;
-        background: rgba(115, 83, 39, 0.15);
-      }
-
-      .meter {
-        height: 10px;
-        border-radius: 999px;
-        background: #162029;
-        overflow: hidden;
-        margin: 0.45rem 0 0.2rem;
-      }
-
-      .meter > div {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #2d9eff, var(--accent));
-        transition: width 0.15s;
-      }
+      .meter { height: 10px; border-radius: 999px; background: #162029; overflow: hidden; margin: 0.45rem 0 0.2rem; }
+      .meter > div { height: 100%; width: 0%; background: linear-gradient(90deg, #2d9eff, var(--accent)); transition: width 0.15s; }
 
       #collector-log {
         max-height: 180px;
@@ -292,34 +232,13 @@
         background: #0c131a;
       }
 
-      #live-preview {
-        overflow: auto;
-        padding: 1rem;
-        background: rgba(12, 18, 23, 0.7);
-      }
+      #live-preview { overflow: auto; padding: 1rem; background: rgba(12, 18, 23, 0.7); }
 
-      #table {
-        border-collapse: collapse;
-        width: 100%;
-        min-width: 780px;
-        font-size: 12px;
-      }
+      #table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: 12px; }
+      #table th, #table td { border: 1px solid var(--line); padding: 0.45rem; text-align: left; }
+      #table th { background: #101922; color: #9ec4e7; }
 
-      #table th,
-      #table td {
-        border: 1px solid var(--line);
-        padding: 0.45rem;
-        text-align: left;
-      }
-
-      #table th {
-        background: #101922;
-        color: #9ec4e7;
-      }
-
-      #play-page {
-        grid-template-rows: auto auto 1fr;
-      }
+      #play-page { grid-template-rows: auto auto 1fr; }
 
       #statusbar {
         display: flex;
@@ -338,27 +257,10 @@
         text-align: center;
         color: var(--muted);
       }
+      #gesture-pill.active { color: var(--accent); border-color: var(--accent); background: rgba(49, 208, 170, 0.1); }
 
-      #gesture-pill.active {
-        color: var(--accent);
-        border-color: var(--accent);
-        background: rgba(49, 208, 170, 0.1);
-      }
-
-      .conf-wrap {
-        width: 90px;
-        height: 7px;
-        background: #18232f;
-        border-radius: 99px;
-        overflow: hidden;
-      }
-
-      .conf-bar {
-        width: 0;
-        height: 100%;
-        background: var(--accent);
-        transition: width 0.12s;
-      }
+      .conf-wrap { width: 90px; height: 7px; background: #18232f; border-radius: 99px; overflow: hidden; }
+      .conf-bar  { width: 0; height: 100%; background: var(--accent); transition: width 0.12s; }
 
       #legend {
         display: flex;
@@ -369,14 +271,7 @@
         background: rgba(10, 15, 20, 0.75);
       }
 
-      .badge {
-        font-size: 12px;
-        color: var(--muted);
-        border: 1px solid #2b3a49;
-        border-radius: 7px;
-        padding: 0.25rem 0.6rem;
-        background: #101923;
-      }
+      .badge { font-size: 12px; color: var(--muted); border: 1px solid #2b3a49; border-radius: 7px; padding: 0.25rem 0.6rem; background: #101923; }
 
       #canvas-area {
         position: relative;
@@ -398,22 +293,13 @@
         padding: 1rem;
       }
 
-      .play-panel {
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        background: rgba(17, 24, 31, 0.9);
-        padding: 1rem;
-      }
+      .play-panel { border: 1px solid var(--line); border-radius: 8px; background: rgba(17, 24, 31, 0.9); padding: 1rem; }
 
-      .cursor-stage {
-        position: relative;
-        min-height: 100%;
-      }
+      .cursor-stage { position: relative; min-height: 100%; }
 
       .movement-target {
         position: absolute;
-        left: 50%;
-        top: 52%;
+        left: 50%; top: 52%;
         width: min(220px, 55%);
         aspect-ratio: 1;
         border: 1px dashed #345063;
@@ -427,37 +313,14 @@
         padding: 1rem;
         background: rgba(12, 19, 26, 0.72);
       }
+      .movement-target.inside { border-color: var(--accent); color: var(--accent); background: rgba(49, 208, 170, 0.11); }
 
-      .movement-target.inside {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: rgba(49, 208, 170, 0.11);
-      }
+      .cursor-stage h2, .actions-panel h2 { font-size: 18px; margin-bottom: 0.45rem; }
+      .actions-panel { overflow-y: auto; }
 
-      .cursor-stage h2,
-      .actions-panel h2 {
-        font-size: 18px;
-        margin-bottom: 0.45rem;
-      }
-      .actions-panel {
-         overflow-y: auto;
-      }
+      #cursor-readout { position: absolute; left: 1rem; bottom: 1rem; color: var(--muted); font-family: Consolas, monospace; font-size: 12px; }
 
-      #cursor-readout {
-        position: absolute;
-        left: 1rem;
-        bottom: 1rem;
-        color: var(--muted);
-        font-family: Consolas, monospace;
-        font-size: 12px;
-      }
-
-      .action-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.7rem;
-        margin-top: 0.9rem;
-      }
+      .action-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; margin-top: 0.9rem; }
 
       .action-tile {
         min-height: 92px;
@@ -465,197 +328,87 @@
         border-radius: 8px;
         background: #101923;
         padding: 0.85rem;
-        transition:
-          border-color 0.15s,
-          background 0.15s,
-          transform 0.15s;
+        transition: border-color 0.15s, background 0.15s, transform 0.15s;
       }
+      .action-tile strong { display: block; color: var(--text); margin-bottom: 0.35rem; font-size: 14px; }
+      .action-tile span   { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; }
+      .action-tile.active { border-color: var(--accent); background: rgba(49, 208, 170, 0.13); transform: translateY(-2px); }
 
-      .action-tile strong {
-        display: block;
-        color: var(--text);
-        margin-bottom: 0.35rem;
-        font-size: 14px;
-      }
+      .test-widget { margin-top: 0.65rem; border: 1px solid #263747; border-radius: 8px; padding: 0.6rem; color: var(--muted); font-size: 12px; background: #0c131a; }
 
-      .action-tile span {
-        display: block;
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.35;
-      }
+      .click-target { width: 100%; margin-top: 0.55rem; border-color: #355264; background: #14202a; }
+      .click-target.active { border-color: var(--accent); color: var(--accent); background: rgba(49, 208, 170, 0.14); }
 
-      .action-tile.active {
-        border-color: var(--accent);
-        background: rgba(49, 208, 170, 0.13);
-        transform: translateY(-2px);
-      }
-
-      .test-widget {
-        margin-top: 0.65rem;
-        border: 1px solid #263747;
-        border-radius: 8px;
-        padding: 0.6rem;
-        color: var(--muted);
-        font-size: 12px;
-        background: #0c131a;
-      }
-
-      .click-target {
-        width: 100%;
-        margin-top: 0.55rem;
-        border-color: #355264;
-        background: #14202a;
-      }
-
-      .click-target.active {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: rgba(49, 208, 170, 0.14);
-      }
-
-      .context-menu-demo {
-        display: grid;
-        gap: 0.35rem;
-      }
-
-      .context-menu-demo div {
-        padding: 0.35rem 0.45rem;
-        border-radius: 6px;
-        background: #111b24;
-      }
+      .context-menu-demo { display: grid; gap: 0.35rem; }
+      .context-menu-demo div { padding: 0.35rem 0.45rem; border-radius: 6px; background: #111b24; }
 
       .counter-value {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 34px;
-        height: 28px;
-        margin-left: 0.4rem;
-        border-radius: 7px;
-        color: var(--accent);
-        border: 1px solid var(--accent);
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 34px; height: 28px; margin-left: 0.4rem;
+        border-radius: 7px; color: var(--accent); border: 1px solid var(--accent);
       }
 
       #screenshot-preview {
-        margin-top: 0.9rem;
-        min-height: 120px;
-        border: 1px dashed #334252;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        color: var(--muted);
-        font-size: 13px;
-        background: #0c131a;
+        margin-top: 0.9rem; min-height: 120px;
+        border: 1px dashed #334252; border-radius: 8px;
+        display: grid; place-items: center; color: var(--muted); font-size: 13px; background: #0c131a;
       }
 
       #cursor {
-        position: absolute;
-        width: 24px;
-        height: 24px;
-        border: 2px solid var(--accent);
-        border-radius: 50%;
-        pointer-events: none;
-        transform: translate(-50%, -50%);
-        left: 50%;
-        top: 50%;
-        z-index: 10;
+        position: absolute; width: 24px; height: 24px;
+        border: 2px solid var(--accent); border-radius: 50%;
+        pointer-events: none; transform: translate(-50%, -50%);
+        left: 50%; top: 50%; z-index: 10;
       }
-
-      #cursor.clicking {
-        background: rgba(49, 208, 170, 0.24);
-        transform: translate(-50%, -50%) scale(1.5);
-      }
+      #cursor.clicking { background: rgba(49, 208, 170, 0.24); transform: translate(-50%, -50%) scale(1.5); }
 
       #action-flash {
-        position: fixed;
-        left: 50%;
-        top: 54%;
+        position: fixed; left: 50%; top: 54%;
         transform: translate(-50%, -50%);
-        border: 1px solid var(--accent);
-        color: var(--accent);
-        background: rgba(49, 208, 170, 0.14);
-        border-radius: 10px;
-        padding: 0.6rem 1.3rem;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-        z-index: 100;
+        border: 1px solid var(--accent); color: var(--accent);
+        background: rgba(49, 208, 170, 0.14); border-radius: 10px;
+        padding: 0.6rem 1.3rem; opacity: 0; pointer-events: none;
+        transition: opacity 0.2s; z-index: 100;
       }
-
-      #action-flash.show {
-        opacity: 1;
-      }
+      #action-flash.show { opacity: 1; }
 
       #camera-panel {
-        position: fixed;
-        right: 1rem;
-        bottom: 1rem;
-        width: 280px;
-        border: 1px solid var(--line);
-        border-radius: 12px;
+        position: fixed; right: 1rem; bottom: 1rem; width: 280px;
+        border: 1px solid var(--line); border-radius: 12px;
         background: rgba(11, 17, 23, 0.92);
-        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.38);
-        overflow: hidden;
-        z-index: 120;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.38);
+        overflow: hidden; z-index: 120;
       }
-
       #camera-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0.5rem 0.65rem;
-        border-bottom: 1px solid var(--line);
-        font-size: 12px;
-        color: var(--muted);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.5rem 0.65rem; border-bottom: 1px solid var(--line);
+        font-size: 12px; color: var(--muted);
       }
-
-      #camera-view {
-        display: block;
-        width: 100%;
-        height: 170px;
-        object-fit: cover;
-        background: #070b0f;
-      }
-
-      #camera-status {
-        padding: 0.45rem 0.65rem;
-        font-size: 12px;
-        color: var(--muted);
-        border-top: 1px solid var(--line);
-      }
+      #camera-view { display: block; width: 100%; height: 170px; object-fit: cover; background: #070b0f; }
+      #camera-status { padding: 0.45rem 0.65rem; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
 
       @media (max-width: 1000px) {
-        #data-page {
-          grid-template-columns: 1fr;
-        }
-        #camera-panel {
-          width: 220px;
-          right: 0.7rem;
-          bottom: 0.7rem;
-        }
-        #camera-view {
-          height: 130px;
-        }
-        #play-surface {
-          grid-template-columns: 1fr;
-          overflow-y: auto;
-        }
+        #data-page { grid-template-columns: 1fr; }
+        #camera-panel { width: 220px; right: 0.7rem; bottom: 0.7rem; }
+        #camera-view  { height: 130px; }
+        #play-surface { grid-template-columns: 1fr; overflow-y: auto; }
       }
     </style>
   </head>
   <body>
     <div id="topbar">
       <div id="brand">Gesture Lab</div>
+
       <div id="mode-switch">
-        <button class="mode-btn active" id="default-mode-btn" type="button">
-          Default Mode
-        </button>
-        <button class="mode-btn" id="custom-mode-btn" type="button">
-          Custom Mode
-        </button>
-        <span id="mode-status">gesture_data.csv</span>
+        <div class="mode-toggle-track" id="mode-toggle" title="Toggle Default / Custom mode">
+          <div class="mode-toggle-thumb"></div>
+          <div class="mode-toggle-labels">
+            <span>Default</span>
+            <span>Custom</span>
+          </div>
+        </div>
       </div>
+
       <div id="conn">
         <span id="model-status" class="missing">Model: not trained</span>
         <div class="dot disconnected" id="dot"></div>
@@ -664,153 +417,62 @@
     </div>
 
     <div id="tabs">
-      <button class="tab active hidden" data-page="data-page" type="button">
-        Collect
-      </button>
+      <button class="tab active hidden" data-page="data-page" type="button">Collect</button>
       <button class="tab hidden" data-page="train-page" type="button">Train</button>
-      <button class="tab" data-page="play-page" type="button">
-        Playground
-      </button>
+      <button class="tab" data-page="play-page" type="button">Playground</button>
     </div>
 
     <div id="workflow">
-      <span class="step active hidden" data-step="data-page"
-        >1. Collect data (per gesture)</span
-      >
-      <span class="step hidden" data-step="train-page"
-        >2. Train &amp; update model</span
-      >
-      <span class="step" data-step="play-page"
-        >3. Playground / live control</span
-      >
+      <span class="step active hidden" data-step="data-page">1. Collect data (per gesture)</span>
+      <span class="step hidden" data-step="train-page">2. Train &amp; update model</span>
+      <span class="step" data-step="play-page">3. Playground / live control</span>
     </div>
 
-    <div
-      class="page"
-      id="train-page"
-      style="grid-template-columns: 360px 1fr; display: none"
-    >
-      <aside
-        id="controls"
-        style="
-          background: rgba(17, 24, 31, 0.92);
-          border-right: 1px solid var(--line);
-          padding: 1rem;
-          overflow-y: auto;
-        "
-      >
+    <div class="page" id="train-page" style="grid-template-columns: 360px 1fr; display: none">
+      <aside id="controls" style="background: rgba(17, 24, 31, 0.92); border-right: 1px solid var(--line); padding: 1rem; overflow-y: auto;">
         <div class="panel">
           <h3>Hyperparameters</h3>
           <p class="muted" style="margin-bottom: 0.7rem">
-            Replaces <code>train.py</code>. Trains on the active dataset and
-            hot-reloads the live model — no separate script needed.
+            Replaces <code>train.py</code>. Trains on the active dataset and hot-reloads the live model — no separate script needed.
           </p>
           <label for="train-epochs">Epochs</label>
           <input id="train-epochs" type="number" min="1" max="200" value="30" />
-
           <label for="train-lr">Learning Rate</label>
-          <input
-            id="train-lr"
-            type="number"
-            step="0.0001"
-            min="0.0001"
-            value="0.001"
-          />
-
+          <input id="train-lr" type="number" step="0.0001" min="0.0001" value="0.001" />
           <label for="train-split">Test Split (Validation)</label>
-          <input
-            id="train-split"
-            type="number"
-            step="0.05"
-            min="0.1"
-            max="0.5"
-            value="0.2"
-          />
-
+          <input id="train-split" type="number" step="0.05" min="0.1" max="0.5" value="0.2" />
           <div class="row">
-            <button class="primary" id="start-train-btn" style="width: 100%">
-              Train &amp; Update Model
-            </button>
+            <button class="primary" id="start-train-btn" style="width: 100%">Train &amp; Update Model</button>
           </div>
         </div>
-
         <div class="panel">
           <h3>Dataset Summary</h3>
-          <div class="muted" id="train-dataset-status">
-            Server dataset: 0 rows | Buffer: 0 rows
-          </div>
-          <div
-            class="muted"
-            id="train-label-breakdown"
-            style="margin-top: 0.4rem"
-          >
-            Label counts: —
-          </div>
+          <div class="muted" id="train-dataset-status">Server dataset: 0 rows | Buffer: 0 rows</div>
+          <div class="muted" id="train-label-breakdown" style="margin-top: 0.4rem">Label counts: —</div>
         </div>
       </aside>
-
-      <main
-        style="
-          padding: 1rem;
-          background: rgba(12, 18, 23, 0.7);
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        "
-      >
+      <main style="padding: 1rem; background: rgba(12, 18, 23, 0.7); display: flex; flex-direction: column; gap: 1rem;">
         <div class="panel">
           <h3>Training Dashboard</h3>
-          <p class="muted">
-            Training merges any buffered samples into the active dataset on the
-            server, retrains GestureNet, and hot-reloads the live model for
-            inference.
-          </p>
+          <p class="muted">Training merges any buffered samples into the active dataset on the server, retrains GestureNet, and hot-reloads the live model for inference.</p>
         </div>
-        <div
-          class="panel"
-          style="flex: 1; display: flex; flex-direction: column"
-        >
+        <div class="panel" style="flex: 1; display: flex; flex-direction: column">
           <h3>Server Training Output</h3>
-          <div
-            id="train-log-box"
-            style="
-              flex: 1;
-              min-height: 300px;
-              max-height: 500px;
-              overflow-y: auto;
-              white-space: pre-wrap;
-              font-family: Consolas, monospace;
-              color: #31d0aa;
-              font-size: 13px;
-              line-height: 1.4;
-              border: 1px solid var(--line);
-              border-radius: 8px;
-              padding: 0.8rem;
-              background: #0c131a;
-              margin-top: 0.5rem;
-            "
-          >
+          <div id="train-log-box" style="flex: 1; min-height: 300px; max-height: 500px; overflow-y: auto; white-space: pre-wrap; font-family: Consolas, monospace; color: #31d0aa; font-size: 13px; line-height: 1.4; border: 1px solid var(--line); border-radius: 8px; padding: 0.8rem; background: #0c131a; margin-top: 0.5rem;">
             Dashboard idle. Awaiting data...
           </div>
         </div>
       </main>
     </div>
+
     <div class="page active" id="data-page">
       <aside id="controls">
         <div class="panel">
           <h3>Collection Settings</h3>
           <p class="muted" style="margin-bottom: 0.7rem">
-            Replaces <code>collect_data.py</code>. Pick a gesture, record ~250
-            samples, save to the active dataset, and repeat for all 7 gestures
-            (0–6).
+            Replaces <code>collect_data.py</code>. Pick a gesture, record ~250 samples, save to the active dataset, and repeat for all 7 gestures (0–6).
           </p>
-          <div
-            class="muted"
-            id="collection-mode-label"
-            style="margin-bottom: 0.7rem"
-          >
-            Active dataset: gesture_data.csv
-          </div>
+          <div class="muted" id="collection-mode-label" style="margin-bottom: 0.7rem">Active dataset: gesture_data.csv</div>
           <label for="label-select">Target Label</label>
           <select id="label-select">
             <option value="0">0 - move</option>
@@ -818,32 +480,24 @@
             <option value="2">2 - right_click</option>
             <option value="3">3 - double_click</option>
             <option value="4">4 - screenshot</option>
-            <option value="5">5 - scroll_up</option>   
+            <option value="5">5 - scroll_up</option>
             <option value="6">6 - scroll_down</option>
           </select>
-
           <label for="target-samples">Target Samples</label>
           <input id="target-samples" type="number" min="1" value="250" />
-
           <div class="row">
             <button class="primary" id="toggle-record">Start Recording</button>
             <button class="warn" id="clear-data">Clear Data</button>
           </div>
         </div>
-
         <div class="panel">
           <h3>Progress</h3>
           <div class="muted" id="progress-text">0 / 250 samples</div>
           <div class="meter"><div id="progress-bar"></div></div>
-          <div class="muted" style="margin-top: 0.5rem" id="recording-status">
-            Status: idle
-          </div>
+          <div class="muted" style="margin-top: 0.5rem" id="recording-status">Status: idle</div>
           <div class="muted" id="data-size">Buffered rows: 0</div>
-          <div class="muted" id="server-data-size" style="margin-top: 0.35rem">
-            Server dataset: 0 rows
-          </div>
+          <div class="muted" id="server-data-size" style="margin-top: 0.35rem">Server dataset: 0 rows</div>
         </div>
-
         <div class="panel">
           <h3>Save &amp; Export</h3>
           <div class="row">
@@ -854,54 +508,26 @@
             <input type="checkbox" id="auto-retrain" checked />
             Retrain model after saving new data
           </label>
-          <p class="muted" style="margin-top: 0.55rem">
-            Saves buffered samples to the active dataset and can automatically
-            retrain the live model.
-          </p>
+          <p class="muted" style="margin-top: 0.55rem">Saves buffered samples to the active dataset and can automatically retrain the live model.</p>
         </div>
-
         <div class="panel">
           <h3>Log</h3>
           <div id="collector-log"></div>
         </div>
       </aside>
-
       <main id="live-preview">
         <div class="panel" style="margin-bottom: 0.8rem">
           <h3>Live Frame Signal</h3>
-          <p class="muted">
-            Server sends landmarks + processed video in real time.
-          </p>
+          <p class="muted">Server sends landmarks + processed video in real time.</p>
         </div>
-
         <table id="table">
-          <thead>
-            <tr>
-              <th>Field</th>
-              <th>Value</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
           <tbody>
-            <tr>
-              <td>Gesture</td>
-              <td id="live-gesture">-</td>
-            </tr>
-            <tr>
-              <td>Confidence</td>
-              <td id="live-confidence">0%</td>
-            </tr>
-            <tr>
-              <td>Cursor</td>
-              <td id="live-cursor">(0.5000, 0.5000)</td>
-            </tr>
-            <tr>
-              <td>Action</td>
-              <td id="live-action">none</td>
-            </tr>
-            <tr>
-              <td>Landmark Count</td>
-              <td id="live-lm-count">0</td>
-            </tr>
+            <tr><td>Gesture</td><td id="live-gesture">-</td></tr>
+            <tr><td>Confidence</td><td id="live-confidence">0%</td></tr>
+            <tr><td>Cursor</td><td id="live-cursor">(0.5000, 0.5000)</td></tr>
+            <tr><td>Action</td><td id="live-action">none</td></tr>
+            <tr><td>Landmark Count</td><td id="live-lm-count">0</td></tr>
           </tbody>
         </table>
       </main>
@@ -911,72 +537,50 @@
       <div id="statusbar">
         <div id="gesture-pill">No gesture</div>
         <div class="conf-wrap"><div class="conf-bar" id="conf-bar"></div></div>
-        <span style="font-size: 12px; color: var(--muted)" id="conf-text"
-          >0%</span
-        >
+        <span style="font-size: 12px; color: var(--muted)" id="conf-text">0%</span>
       </div>
-
       <div id="legend">
         <span class="badge">0 move -> cursor move</span>
         <span class="badge">1 left_click -> left click</span>
         <span class="badge">2 right_click -> right click</span>
         <span class="badge">3 double_click -> double click</span>
         <span class="badge">4 screenshot -> screenshot</span>
-        <span class="badge">5 scroll_up -> scroll up</span> 
+        <span class="badge">5 scroll_up -> scroll up</span>
         <span class="badge">6 scroll_down -> scroll down</span>
       </div>
-
       <div id="canvas-area">
         <div id="play-surface">
           <section class="play-panel cursor-stage">
-              <h2>Cursor Movement</h2>
-              <p class="muted">
-                Gesture 0 moves the live pointer here and controls the real
-                mouse through the Python server.
-              </p>
-              <div class="movement-target" id="movement-target">
-                Move cursor into this target
-              </div>
-              <div id="cursor-readout">x: 0.5000 | y: 0.5000</div>
+            <h2>Cursor Movement</h2>
+            <p class="muted">Gesture 0 moves the live pointer here and controls the real mouse through the Python server.</p>
+            <div class="movement-target" id="movement-target">Move cursor into this target</div>
+            <div id="cursor-readout">x: 0.5000 | y: 0.5000</div>
           </section>
-
           <section class="play-panel actions-panel">
             <h2>Gesture Actions</h2>
-            <p class="muted">
-              Each tile lights up when the matching original gesture action is
-              received from the server.
-            </p>
+            <p class="muted">Each tile lights up when the matching original gesture action is received from the server.</p>
             <div class="action-grid">
               <div class="action-tile" data-action="left_click">
                 <strong>1. Left Click</strong>
                 <span>Performs a normal left mouse click.</span>
-                <button class="click-target" id="left-click-target" type="button">
-                  Test Button
-                </button>
+                <button class="click-target" id="left-click-target" type="button">Test Button</button>
               </div>
               <div class="action-tile" data-action="right_click">
                 <strong>2. Right Click</strong>
                 <span>Opens the standard right-click context action.</span>
                 <div class="test-widget context-menu-demo" id="context-demo">
-                  <div>Open</div>
-                  <div>Copy</div>
-                  <div>Properties</div>
+                  <div>Open</div><div>Copy</div><div>Properties</div>
                 </div>
               </div>
               <div class="action-tile" data-action="double_click">
                 <strong>3. Double Click</strong>
                 <span>Runs a double click at the current cursor position.</span>
-                <div class="test-widget">
-                  Double-click count
-                  <span class="counter-value" id="double-click-count">0</span>
-                </div>
+                <div class="test-widget">Double-click count <span class="counter-value" id="double-click-count">0</span></div>
               </div>
               <div class="action-tile" data-action="screenshot">
                 <strong>4. Screenshot</strong>
                 <span>Triggers the screenshot command in the server app.</span>
-                <div class="test-widget" id="screenshot-count">
-                  Captures: 0
-                </div>
+                <div class="test-widget" id="screenshot-count">Captures: 0</div>
               </div>
             </div>
             <div id="screenshot-preview">Screenshot gesture waiting...</div>
@@ -1003,85 +607,65 @@
         <span>Live Camera (from Server)</span>
         <button id="camera-toggle" type="button">Hide</button>
       </div>
-      <img
-        id="camera-view"
-        style="
-          width: 100%;
-          height: 170px;
-          object-fit: cover;
-          background: #070b0f;
-        "
-      />
+      <img id="camera-view" style="width: 100%; height: 170px; object-fit: cover; background: #070b0f;" />
       <div id="camera-status">Camera: active via server</div>
     </div>
 
     <script>
-      const dot = document.getElementById("dot");
-      const wsLabel = document.getElementById("ws-label");
-      const modelStatus = document.getElementById("model-status");
-      const defaultModeBtn = document.getElementById("default-mode-btn");
-      const customModeBtn = document.getElementById("custom-mode-btn");
-      const modeStatus = document.getElementById("mode-status");
-      const collectionModeLabel = document.getElementById(
-        "collection-mode-label",
-      );
-      const workflowSteps = document.querySelectorAll(".step");
-      const trainPage = document.getElementById("train-page");
-      const startTrainBtn = document.getElementById("start-train-btn");
+      const dot            = document.getElementById("dot");
+      const wsLabel        = document.getElementById("ws-label");
+      const modelStatus    = document.getElementById("model-status");
+      const modeToggle     = document.getElementById("mode-toggle");
+      const collectionModeLabel = document.getElementById("collection-mode-label");
+      const workflowSteps  = document.querySelectorAll(".step");
+      const trainPage      = document.getElementById("train-page");
+      const startTrainBtn  = document.getElementById("start-train-btn");
       const trainEpochsInput = document.getElementById("train-epochs");
-      const trainLrInput = document.getElementById("train-lr");
+      const trainLrInput   = document.getElementById("train-lr");
       const trainSplitInput = document.getElementById("train-split");
-      const trainDatasetStatus = document.getElementById(
-        "train-dataset-status",
-      );
-      const trainLabelBreakdown = document.getElementById(
-        "train-label-breakdown",
-      );
-      const trainLogBox = document.getElementById("train-log-box");
-      const saveServerBtn = document.getElementById("save-server-btn");
+      const trainDatasetStatus  = document.getElementById("train-dataset-status");
+      const trainLabelBreakdown = document.getElementById("train-label-breakdown");
+      const trainLogBox    = document.getElementById("train-log-box");
+      const saveServerBtn  = document.getElementById("save-server-btn");
       const autoRetrainCheckbox = document.getElementById("auto-retrain");
       const serverDataSize = document.getElementById("server-data-size");
-      const tabs = document.querySelectorAll(".tab");
-      const pages = document.querySelectorAll(".page");
-
-      const labelSelect = document.getElementById("label-select");
+      const tabs           = document.querySelectorAll(".tab");
+      const pages          = document.querySelectorAll(".page");
+      const labelSelect    = document.getElementById("label-select");
       const targetSamplesInput = document.getElementById("target-samples");
       const toggleRecordBtn = document.getElementById("toggle-record");
-      const clearDataBtn = document.getElementById("clear-data");
-      const progressText = document.getElementById("progress-text");
-      const progressBar = document.getElementById("progress-bar");
+      const clearDataBtn   = document.getElementById("clear-data");
+      const progressText   = document.getElementById("progress-text");
+      const progressBar    = document.getElementById("progress-bar");
       const recordingStatus = document.getElementById("recording-status");
-      const dataSize = document.getElementById("data-size");
+      const dataSize       = document.getElementById("data-size");
       const downloadCsvBtn = document.getElementById("download-csv");
-      const logBox = document.getElementById("collector-log");
-
-      const liveGesture = document.getElementById("live-gesture");
+      const logBox         = document.getElementById("collector-log");
+      const liveGesture    = document.getElementById("live-gesture");
       const liveConfidence = document.getElementById("live-confidence");
-      const liveCursor = document.getElementById("live-cursor");
-      const liveAction = document.getElementById("live-action");
-      const liveLmCount = document.getElementById("live-lm-count");
+      const liveCursor     = document.getElementById("live-cursor");
+      const liveAction     = document.getElementById("live-action");
+      const liveLmCount    = document.getElementById("live-lm-count");
       const liveGestureTable = document.getElementById("table");
-
-      const canvasArea = document.getElementById("canvas-area");
-      const cursor = document.getElementById("cursor");
-      const cursorReadout = document.getElementById("cursor-readout");
+      const canvasArea     = document.getElementById("canvas-area");
+      const cursor         = document.getElementById("cursor");
+      const cursorReadout  = document.getElementById("cursor-readout");
       const movementTarget = document.getElementById("movement-target");
-      const actionTiles = document.querySelectorAll(".action-tile");
+      const actionTiles    = document.querySelectorAll(".action-tile");
       const leftClickTarget = document.getElementById("left-click-target");
       const doubleClickCount = document.getElementById("double-click-count");
-      const screenshotCount = document.getElementById("screenshot-count");
+      const screenshotCount  = document.getElementById("screenshot-count");
       const screenshotPreview = document.getElementById("screenshot-preview");
-      const gesturePill = document.getElementById("gesture-pill");
-      const confBar = document.getElementById("conf-bar");
-      const confText = document.getElementById("conf-text");
-      const actionFlash = document.getElementById("action-flash");
-      const cameraPanel = document.getElementById("camera-panel");
-      const cameraView = document.getElementById("camera-view");
-      const cameraStatus = document.getElementById("camera-status");
-      const cameraToggle = document.getElementById("camera-toggle");
+      const gesturePill    = document.getElementById("gesture-pill");
+      const confBar        = document.getElementById("conf-bar");
+      const confText       = document.getElementById("conf-text");
+      const actionFlash    = document.getElementById("action-flash");
+      const cameraPanel    = document.getElementById("camera-panel");
+      const cameraView     = document.getElementById("camera-view");
+      const cameraStatus   = document.getElementById("camera-status");
+      const cameraToggle   = document.getElementById("camera-toggle");
 
       let flashTimeout = null;
-
       let recording = false;
       let localRows = [];
       let sessionRows = [];
@@ -1100,13 +684,8 @@
       let scrollDownTotal = 0;
 
       const gestureNames = {
-        0: "move",
-        1: "left_click",
-        2: "right_click",
-        3: "double_click",
-        4: "screenshot",
-        5: "scroll_up", 
-        6: "scroll_down",
+        0: "move", 1: "left_click", 2: "right_click",
+        3: "double_click", 4: "screenshot", 5: "scroll_up", 6: "scroll_down"
       };
 
       function logLine(text) {
@@ -1116,73 +695,45 @@
 
       function addTrainLog(text, isError = false) {
         const ts = new Date().toLocaleTimeString();
-        const prefix = isError ? "ERROR" : "INFO";
-        trainLogBox.textContent =
-          `[${ts}] ${prefix}: ${text}\n` + trainLogBox.textContent;
+        trainLogBox.textContent = `[${ts}] ${isError ? "ERROR" : "INFO"}: ${text}\n` + trainLogBox.textContent;
       }
 
       function formatLabelBreakdown(labels) {
-        const keys = Object.keys(labels || {}).sort(
-          (a, b) => Number(a) - Number(b),
-        );
+        const keys = Object.keys(labels || {}).sort((a, b) => Number(a) - Number(b));
         if (!keys.length) return "Label counts: —";
-        return (
-          "Label counts: " +
-          keys
-            .map((k) => `${k} ${gestureNames[k] || ""} (${labels[k]})`.trim())
-            .join(", ")
-        );
+        return "Label counts: " + keys.map(k => `${k} ${gestureNames[k] || ""} (${labels[k]})`.trim()).join(", ");
       }
 
       function updateModelStatus() {
-        if (modelReady) {
-          modelStatus.textContent = "Model: ready";
-          modelStatus.className = "ready";
-        } else {
-          modelStatus.textContent = "Model: not trained";
-          modelStatus.className = "missing";
-        }
+        if (modelReady) { modelStatus.textContent = "Model: ready"; modelStatus.className = "ready"; }
+        else            { modelStatus.textContent = "Model: not trained"; modelStatus.className = "missing"; }
       }
 
       function updateDatasetDisplays() {
-        serverDataSize.textContent = `Active dataset: ${currentDatasetFile} | Rows: ${serverTotalRows}`;
-        dataSize.textContent = `Buffered rows: ${localRows.length}`;
+        serverDataSize.textContent   = `Active dataset: ${currentDatasetFile} | Rows: ${serverTotalRows}`;
+        dataSize.textContent         = `Buffered rows: ${localRows.length}`;
         trainDatasetStatus.textContent = `Active dataset: ${currentDatasetFile} | Rows: ${serverTotalRows} | Buffer: ${localRows.length} rows`;
-        trainLabelBreakdown.textContent =
-          formatLabelBreakdown(serverLabelCounts);
-        if (collectionModeLabel) {
-          collectionModeLabel.textContent = `Active dataset: ${currentDatasetFile}`;
-        }
+        trainLabelBreakdown.textContent = formatLabelBreakdown(serverLabelCounts);
+        if (collectionModeLabel) collectionModeLabel.textContent = `Active dataset: ${currentDatasetFile}`;
       }
 
-      function updateModeButtons() {
-        defaultModeBtn.classList.toggle("active", currentMode === "default");
-        customModeBtn.classList.toggle("active", currentMode === "custom");
-        modeStatus.textContent = currentDatasetFile;
+      function updateToggleUI() {
+        modeToggle.classList.toggle("custom", currentMode === "custom");
       }
 
       function updateModeVisibility() {
         const customActive = currentMode === "custom";
-        document
-          .querySelectorAll('.tab[data-page="data-page"], .tab[data-page="train-page"], .step[data-step="data-page"], .step[data-step="train-page"]')
-          .forEach((el) => el.classList.toggle("hidden", !customActive));
-
-        if (!customActive) {
-          setTab("play-page");
-        }
+        document.querySelectorAll('.tab[data-page="data-page"], .tab[data-page="train-page"], .step[data-step="data-page"], .step[data-step="train-page"]')
+          .forEach(el => el.classList.toggle("hidden", !customActive));
+        if (!customActive) setTab("play-page");
       }
 
       function updateGestureVisibility() {
-        const showGesturePanel = currentPageId === "play-page";
-        if (liveGestureTable) {
-          liveGestureTable.classList.toggle("hidden", !showGesturePanel);
-        }
+        if (liveGestureTable) liveGestureTable.classList.toggle("hidden", currentPageId !== "play-page");
       }
 
       function resetLocalBuffer() {
-        localRows = [];
-        sessionRows = [];
-        recording = false;
+        localRows = []; sessionRows = []; recording = false;
         toggleRecordBtn.textContent = "Start Recording";
         recordingStatus.textContent = "Status: idle";
         updateProgress();
@@ -1191,103 +742,61 @@
       function applyMode(mode, sendToServer = false) {
         const previousMode = currentMode;
         currentMode = mode === "custom" ? "custom" : "default";
-        currentDatasetFile =
-          currentMode === "custom"
-            ? "custom_gesture_data.csv"
-            : "gesture_data.csv";
-        updateModeButtons();
+        currentDatasetFile = currentMode === "custom" ? "custom_gesture_data.csv" : "gesture_data.csv";
+        updateToggleUI();
         updateModeVisibility();
         updateDatasetDisplays();
 
-        if (previousMode !== currentMode || currentMode === "custom") {
-          resetLocalBuffer();
-        }
+        if (previousMode !== currentMode || currentMode === "custom") resetLocalBuffer();
 
-        if (currentMode === "custom") {
-          logLine("Custom mode enabled. Local buffer cleared.");
-        } else if (sendToServer) {
-          logLine("Default mode enabled.");
-        }
+        if (currentMode === "custom") logLine("Custom mode enabled. Local buffer cleared.");
+        else if (sendToServer) logLine("Default mode enabled.");
 
         if (sendToServer && ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(
-            JSON.stringify({
-              type: "set_mode",
-              mode: currentMode,
-              reset: currentMode === "custom",
-            }),
-          );
+          ws.send(JSON.stringify({ type: "set_mode", mode: currentMode, reset: currentMode === "custom" }));
         }
       }
 
-      function csvToBase64(csvText) {
-        return btoa(unescape(encodeURIComponent(csvText)));
-      }
+      modeToggle.addEventListener("click", () => {
+        applyMode(currentMode === "default" ? "custom" : "default", true);
+      });
+
+      function csvToBase64(csvText) { return btoa(unescape(encodeURIComponent(csvText))); }
 
       function setTab(pageId) {
         currentPageId = pageId;
-        tabs.forEach((btn) =>
-          btn.classList.toggle("active", btn.dataset.page === pageId),
-        );
-        workflowSteps.forEach((step) =>
-          step.classList.toggle("active", step.dataset.step === pageId),
-        );
-        pages.forEach((page) => {
-          if (page.id === pageId) {
-            page.style.display = pageId === "play-page" ? "grid" : "grid";
-            page.classList.add("active");
-          } else {
-            page.style.display = "none";
-            page.classList.remove("active");
-          }
+        tabs.forEach(btn => btn.classList.toggle("active", btn.dataset.page === pageId));
+        workflowSteps.forEach(step => step.classList.toggle("active", step.dataset.step === pageId));
+        pages.forEach(page => {
+          if (page.id === pageId) { page.style.display = "grid"; page.classList.add("active"); }
+          else { page.style.display = "none"; page.classList.remove("active"); }
         });
         updateGestureVisibility();
-
-        if (ws && ws.readyState === WebSocket.OPEN) {
+        if (ws && ws.readyState === WebSocket.OPEN)
           ws.send(JSON.stringify({ type: "set_ui_page", page_id: pageId }));
-        }
-
         if (pageId === "train-page") {
           updateDatasetDisplays();
-          if (ws && ws.readyState === WebSocket.OPEN) {
+          if (ws && ws.readyState === WebSocket.OPEN)
             ws.send(JSON.stringify({ type: "get_dataset" }));
-          }
         }
       }
 
-      tabs.forEach((btn) => {
-        btn.addEventListener("click", () => setTab(btn.dataset.page));
-      });
-
-      defaultModeBtn.addEventListener("click", () => applyMode("default", true));
-      customModeBtn.addEventListener("click", () => applyMode("custom", true));
-
-      workflowSteps.forEach((step) => {
-        step.addEventListener("click", () => setTab(step.dataset.step));
-        step.style.cursor = "pointer";
-      });
+      tabs.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.page)));
+      workflowSteps.forEach(step => { step.addEventListener("click", () => setTab(step.dataset.step)); step.style.cursor = "pointer"; });
 
       function csvHeader() {
-        const header = [];
-        for (let i = 0; i < 21; i++) {
-          header.push(`x${i}`);
-          header.push(`y${i}`);
-        }
-        header.push("label");
-        return header;
+        const h = [];
+        for (let i = 0; i < 21; i++) { h.push(`x${i}`); h.push(`y${i}`); }
+        h.push("label"); return h;
       }
 
       function updateProgress() {
-        const target = Math.max(
-          1,
-          parseInt(targetSamplesInput.value || "250", 10),
-        );
+        const target = Math.max(1, parseInt(targetSamplesInput.value || "250", 10));
         const count = sessionRows.length;
         const pct = Math.min(100, (count / target) * 100);
         progressText.textContent = `${count} / ${target} samples`;
         progressBar.style.width = `${pct}%`;
         updateDatasetDisplays();
-
         if (count >= target && recording) {
           recording = false;
           toggleRecordBtn.textContent = "Start Recording";
@@ -1304,74 +813,36 @@
       }
 
       function downloadCsv() {
-        if (!localRows.length) {
-          logLine("No samples to export.");
-          return;
-        }
-
-        const blob = new Blob([toCsvString(localRows)], {
-          type: "text/csv;charset=utf-8;",
-        });
+        if (!localRows.length) { logLine("No samples to export."); return; }
+        const blob = new Blob([toCsvString(localRows)], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = url;
-        a.download = `${currentDatasetFile.replace(".csv", "")}_ui_${Date.now()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        logLine(`Exported ${localRows.length} rows to CSV.`);
+        a.href = url; a.download = `${currentDatasetFile.replace(".csv","")}_ui_${Date.now()}.csv`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url); logLine(`Exported ${localRows.length} rows to CSV.`);
       }
 
       function showFlash(text) {
-        actionFlash.textContent = text;
-        actionFlash.classList.add("show");
+        actionFlash.textContent = text; actionFlash.classList.add("show");
         clearTimeout(flashTimeout);
-        flashTimeout = setTimeout(
-          () => actionFlash.classList.remove("show"),
-          700,
-        );
+        flashTimeout = setTimeout(() => actionFlash.classList.remove("show"), 700);
       }
 
       function showGestureAction(action) {
         if (!action || action === "none") return;
-
-        actionTiles.forEach((tile) => {
+        actionTiles.forEach(tile => {
           const active = tile.dataset.action === action;
           tile.classList.toggle("active", active);
-          if (active) {
-            setTimeout(() => tile.classList.remove("active"), 700);
-          }
+          if (active) setTimeout(() => tile.classList.remove("active"), 700);
         });
-
         if (action === "left_click") {
-          leftClickTarget.classList.add("active");
-          leftClickTarget.textContent = "Clicked";
-          setTimeout(() => {
-            leftClickTarget.classList.remove("active");
-            leftClickTarget.textContent = "Test Button";
-          }, 700);
+          leftClickTarget.classList.add("active"); leftClickTarget.textContent = "Clicked";
+          setTimeout(() => { leftClickTarget.classList.remove("active"); leftClickTarget.textContent = "Test Button"; }, 700);
         }
-
-        if (action === "double_click") {
-          doubleClickTotal += 1;
-          doubleClickCount.textContent = String(doubleClickTotal);
-        }
-
-        if (action === "screenshot") {
-          screenshotTotal += 1;
-          screenshotCount.textContent = `Captures: ${screenshotTotal}`;
-          screenshotPreview.textContent =
-            "Screenshot gesture triggered at " + new Date().toLocaleTimeString();
-        }
-        if (action === "scroll_up") {
-          scrollUpTotal += 1;
-          document.getElementById("scroll-up-count").textContent = `Scrolls: ${scrollUpTotal}`;
-        }
-        if (action === "scroll_down") {
-          scrollDownTotal += 1;
-          document.getElementById("scroll-down-count").textContent = `Scrolls: ${scrollDownTotal}`;
-        }
+        if (action === "double_click") { doubleClickTotal++; doubleClickCount.textContent = String(doubleClickTotal); }
+        if (action === "screenshot") { screenshotTotal++; screenshotCount.textContent = `Captures: ${screenshotTotal}`; screenshotPreview.textContent = "Screenshot gesture triggered at " + new Date().toLocaleTimeString(); }
+        if (action === "scroll_up")   { scrollUpTotal++;   document.getElementById("scroll-up-count").textContent   = `Scrolls: ${scrollUpTotal}`; }
+        if (action === "scroll_down") { scrollDownTotal++; document.getElementById("scroll-down-count").textContent = `Scrolls: ${scrollDownTotal}`; }
       }
 
       function pulseCursor() {
@@ -1381,113 +852,61 @@
 
       toggleRecordBtn.addEventListener("click", () => {
         recording = !recording;
-        toggleRecordBtn.textContent = recording
-          ? "Stop Recording"
-          : "Start Recording";
-        recordingStatus.textContent = recording
-          ? "Status: recording"
-          : "Status: idle";
-        if (recording) {
-          sessionRows = [];
-          logLine(
-            `Recording started for label ${labelSelect.value} (${gestureNames[labelSelect.value]}).`,
-          );
-        } else {
-          logLine("Recording stopped.");
-        }
+        toggleRecordBtn.textContent = recording ? "Stop Recording" : "Start Recording";
+        recordingStatus.textContent = recording ? "Status: recording" : "Status: idle";
+        if (recording) { sessionRows = []; logLine(`Recording started for label ${labelSelect.value} (${gestureNames[labelSelect.value]}).`); }
+        else logLine("Recording stopped.");
         updateProgress();
       });
 
-      clearDataBtn.addEventListener("click", () => {
-        resetLocalBuffer();
-        logLine("Cleared buffered data.");
-      });
-
+      clearDataBtn.addEventListener("click", () => { resetLocalBuffer(); logLine("Cleared buffered data."); });
       downloadCsvBtn.addEventListener("click", downloadCsv);
 
       function sendSaveToServer(triggerRetrain = false) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-          logLine("Not connected to server.");
-          return false;
-        }
-        if (!localRows.length) {
-          logLine("No buffered samples to save.");
-          return false;
-        }
-
+        if (!ws || ws.readyState !== WebSocket.OPEN) { logLine("Not connected to server."); return false; }
+        if (!localRows.length) { logLine("No buffered samples to save."); return false; }
         pendingRetrainAfterSave = triggerRetrain;
-        ws.send(
-          JSON.stringify({
-            type: "save_data",
-            csv_base64: csvToBase64(toCsvString(localRows)),
-          }),
-        );
+        ws.send(JSON.stringify({ type: "save_data", csv_base64: csvToBase64(toCsvString(localRows)) }));
         logLine(`Sending ${localRows.length} rows to server...`);
         saveServerBtn.disabled = true;
         return true;
       }
 
       function sendTrain(includeBuffer = true) {
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-          addTrainLog("Not connected to server.", true);
-          return;
-        }
-        if (trainingInProgress) {
-          addTrainLog("Training already in progress.", true);
-          return;
-        }
-
+        if (!ws || ws.readyState !== WebSocket.OPEN) { addTrainLog("Not connected to server.", true); return; }
+        if (trainingInProgress) { addTrainLog("Training already in progress.", true); return; }
         const payload = {
           type: "train",
           epochs: parseInt(trainEpochsInput.value || "30", 10),
           lr: parseFloat(trainLrInput.value || "0.001"),
           test_split: parseFloat(trainSplitInput.value || "0.2"),
         };
-
         if (includeBuffer && localRows.length) {
           payload.csv_base64 = csvToBase64(toCsvString(localRows));
-          addTrainLog(
-            `Merging ${localRows.length} buffered rows, then training...`,
-          );
-        } else if (serverTotalRows === 0) {
-          addTrainLog("No dataset on server. Collect samples first.", true);
-          return;
-        } else {
-          addTrainLog(
-            `Training on server dataset (${serverTotalRows} rows)...`,
-          );
-        }
-
-        trainingInProgress = true;
-        startTrainBtn.disabled = true;
+          addTrainLog(`Merging ${localRows.length} buffered rows, then training...`);
+        } else if (serverTotalRows === 0) { addTrainLog("No dataset on server. Collect samples first.", true); return; }
+        else addTrainLog(`Training on server dataset (${serverTotalRows} rows)...`);
+        trainingInProgress = true; startTrainBtn.disabled = true;
         ws.send(JSON.stringify(payload));
       }
 
-      saveServerBtn.addEventListener("click", () => {
-        sendSaveToServer(autoRetrainCheckbox.checked);
-      });
-
+      saveServerBtn.addEventListener("click", () => sendSaveToServer(autoRetrainCheckbox.checked));
       startTrainBtn.addEventListener("click", () => sendTrain(true));
 
       function connect() {
         ws = new WebSocket("ws://localhost:8765");
-
         ws.onopen = () => {
           dot.className = "dot connected";
           wsLabel.textContent = "Connected to demo_server.py";
           logLine("WebSocket connected.");
         };
-
         ws.onclose = () => {
           dot.className = "dot disconnected";
           wsLabel.textContent = "Disconnected. Restart demo_server.py";
           logLine("WebSocket disconnected. Retrying in 2s.");
           setTimeout(connect, 2000);
         };
-
-        ws.onerror = () => {
-          dot.className = "dot disconnected";
-        };
+        ws.onerror = () => { dot.className = "dot disconnected"; };
 
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
@@ -1495,176 +914,85 @@
           if (data.type === "dataset_info") {
             serverTotalRows = data.total || 0;
             serverLabelCounts = data.labels || {};
-            if (data.dataset_file) {
-              currentDatasetFile = data.dataset_file;
-            }
-            if (data.mode) {
-              currentMode = data.mode;
-            }
-            updateModeButtons();
+            if (data.dataset_file) currentDatasetFile = data.dataset_file;
+            if (data.mode) currentMode = data.mode;
+            updateToggleUI();
             updateModeVisibility();
             updateDatasetDisplays();
-            if (typeof data.model_ready === "boolean") {
-              modelReady = data.model_ready;
-              updateModelStatus();
-            }
-            if (data.mode === "custom") {
-              recording = false;
-              toggleRecordBtn.textContent = "Start Recording";
-              recordingStatus.textContent = "Status: idle";
-            }
+            if (typeof data.model_ready === "boolean") { modelReady = data.model_ready; updateModelStatus(); }
+            if (data.mode === "custom") { recording = false; toggleRecordBtn.textContent = "Start Recording"; recordingStatus.textContent = "Status: idle"; }
             return;
           }
-
-          if (data.type === "ui_page_status") {
-            return;
-          }
-
-          if (data.type === "mode_status") {
-            addTrainLog(data.message || `Mode switched to ${data.mode}.`);
-            return;
-          }
-
+          if (data.type === "ui_page_status") return;
+          if (data.type === "mode_status") { addTrainLog(data.message || `Mode switched to ${data.mode}.`); return; }
           if (data.type === "save_status") {
             saveServerBtn.disabled = false;
             if (data.status === "completed") {
-              logLine(data.message);
-              localRows = [];
-              sessionRows = [];
-              recording = false;
-              toggleRecordBtn.textContent = "Start Recording";
-              recordingStatus.textContent = "Status: idle";
+              logLine(data.message); localRows = []; sessionRows = []; recording = false;
+              toggleRecordBtn.textContent = "Start Recording"; recordingStatus.textContent = "Status: idle";
               updateProgress();
-              if (pendingRetrainAfterSave) {
-                pendingRetrainAfterSave = false;
-                setTab("train-page");
-                sendTrain(false);
-              }
-            } else {
-              logLine("Save failed: " + data.message);
-              pendingRetrainAfterSave = false;
-            }
+              if (pendingRetrainAfterSave) { pendingRetrainAfterSave = false; setTab("train-page"); sendTrain(false); }
+            } else { logLine("Save failed: " + data.message); pendingRetrainAfterSave = false; }
             return;
           }
-
           if (data.type === "train_status" || data.type === "train_progress") {
             if (data.type === "train_progress") {
-              const acc =
-                data.val_acc != null ? ` | Val Acc: ${data.val_acc}%` : "";
-              addTrainLog(
-                `Epoch ${data.epoch}/${data.total_epochs} — Loss: ${data.loss}${acc}`,
-              );
-            } else if (data.status === "starting") {
-              addTrainLog(data.message);
-            } else if (data.status === "completed") {
-              trainingInProgress = false;
-              startTrainBtn.disabled = false;
-              modelReady = true;
-              updateModelStatus();
-              localRows = [];
-              sessionRows = [];
-              updateDatasetDisplays();
-              addTrainLog(data.message);
-              showFlash("Model updated");
+              const acc = data.val_acc != null ? ` | Val Acc: ${data.val_acc}%` : "";
+              addTrainLog(`Epoch ${data.epoch}/${data.total_epochs} — Loss: ${data.loss}${acc}`);
+            } else if (data.status === "starting") { addTrainLog(data.message); }
+            else if (data.status === "completed") {
+              trainingInProgress = false; startTrainBtn.disabled = false;
+              modelReady = true; updateModelStatus();
+              localRows = []; sessionRows = []; updateDatasetDisplays();
+              addTrainLog(data.message); showFlash("Model updated");
             } else if (data.status === "error") {
-              trainingInProgress = false;
-              startTrainBtn.disabled = false;
+              trainingInProgress = false; startTrainBtn.disabled = false;
               addTrainLog(data.message, true);
             }
             return;
           }
 
-          const {
-            gesture,
-            confidence = 0,
-            cursor_x = 0.5,
-            cursor_y = 0.5,
-            action = "none",
-            landmarks = [],
-            frame = null,
-          } = data;
+          const { gesture, confidence = 0, cursor_x = 0.5, cursor_y = 0.5, action = "none", landmarks = [], frame = null } = data;
 
           if (currentPageId === "play-page") {
-            liveGesture.textContent =
-              gesture == null
-                ? "-"
-                : `${gesture} (${gestureNames[gesture] || "unknown"})`;
+            liveGesture.textContent = gesture == null ? "-" : `${gesture} (${gestureNames[gesture] || "unknown"})`;
             liveConfidence.textContent = `${confidence}%`;
             liveCursor.textContent = `(${cursor_x.toFixed(4)}, ${cursor_y.toFixed(4)})`;
             liveAction.textContent = action || "none";
             liveLmCount.textContent = String(landmarks.length);
-
-            gesturePill.textContent =
-              gesture == null
-                ? "No gesture"
-                : `${gestureNames[gesture] || gesture}`;
-            gesturePill.className = "";
-            gesturePill.id = "gesture-pill";
+            gesturePill.textContent = gesture == null ? "No gesture" : `${gestureNames[gesture] || gesture}`;
+            gesturePill.className = ""; gesturePill.id = "gesture-pill";
             if (confidence > 85) gesturePill.classList.add("active");
-
             confBar.style.width = `${Math.max(0, Math.min(100, confidence))}%`;
             confText.textContent = `${confidence}%`;
-
             const px = cursor_x * canvasArea.clientWidth;
             const py = cursor_y * canvasArea.clientHeight;
-            cursor.style.left = `${px}px`;
-            cursor.style.top = `${py}px`;
+            cursor.style.left = `${px}px`; cursor.style.top = `${py}px`;
             cursorReadout.textContent = `x: ${cursor_x.toFixed(4)} | y: ${cursor_y.toFixed(4)}`;
             const targetRect = movementTarget.getBoundingClientRect();
-            const areaRect = canvasArea.getBoundingClientRect();
-            const screenX = areaRect.left + px;
-            const screenY = areaRect.top + py;
-            movementTarget.classList.toggle(
-              "inside",
-              screenX >= targetRect.left &&
-                screenX <= targetRect.right &&
-                screenY >= targetRect.top &&
-                screenY <= targetRect.bottom,
-            );
-
-            if (action === "left_click") {
-              pulseCursor();
-              showFlash("Left Click");
-            } else if (action === "right_click") {
-              showFlash("Right Click");
-            } else if (action === "double_click") {
-              pulseCursor();
-              showFlash("Double Click");
-            } else if (action === "screenshot") {
-              showFlash("Screenshot");
-            } else if (action === "scroll_up") {
-              showFlash("Scroll Up");
-            } else if (action === "scroll_down") {
-              showFlash("Scroll Down");
-            }
+            const areaRect   = canvasArea.getBoundingClientRect();
+            movementTarget.classList.toggle("inside",
+              areaRect.left+px >= targetRect.left && areaRect.left+px <= targetRect.right &&
+              areaRect.top+py  >= targetRect.top  && areaRect.top+py  <= targetRect.bottom);
+            if (action === "left_click")   { pulseCursor(); showFlash("Left Click"); }
+            else if (action === "right_click")  showFlash("Right Click");
+            else if (action === "double_click") { pulseCursor(); showFlash("Double Click"); }
+            else if (action === "screenshot")   showFlash("Screenshot");
+            else if (action === "scroll_up")    showFlash("Scroll Up");
+            else if (action === "scroll_down")  showFlash("Scroll Down");
             showGestureAction(action);
           } else {
-            liveGesture.textContent = "-";
-            liveConfidence.textContent = "0%";
-            liveCursor.textContent = "(0.5000, 0.5000)";
-            liveAction.textContent = "none";
-            liveLmCount.textContent = "0";
-            confBar.style.width = "0%";
-            confText.textContent = "0%";
+            liveGesture.textContent = "-"; liveConfidence.textContent = "0%";
+            liveCursor.textContent = "(0.5000, 0.5000)"; liveAction.textContent = "none";
+            liveLmCount.textContent = "0"; confBar.style.width = "0%"; confText.textContent = "0%";
           }
 
           if (recording && landmarks.length === 42) {
-            const row = [
-              ...landmarks.map((v) => Number(v).toFixed(6)),
-              labelSelect.value,
-            ];
-            localRows.push(row);
-            sessionRows.push(row);
-            updateProgress();
+            const row = [...landmarks.map(v => Number(v).toFixed(6)), labelSelect.value];
+            localRows.push(row); sessionRows.push(row); updateProgress();
           }
-          if (typeof data.model_ready === "boolean") {
-            modelReady = data.model_ready;
-            updateModelStatus();
-          }
-
-          if (frame || data.frame) {
-            cameraView.src = "data:image/jpeg;base64," + (frame || data.frame);
-          }
+          if (typeof data.model_ready === "boolean") { modelReady = data.model_ready; updateModelStatus(); }
+          if (frame || data.frame) cameraView.src = "data:image/jpeg;base64," + (frame || data.frame);
         };
       }
 
@@ -1676,12 +1004,8 @@
         cameraPanel.style.width = hidden ? "280px" : "120px";
       });
 
-      updateProgress();
-      updateDatasetDisplays();
-      updateModelStatus();
-      logLine(
-        "UI ready. Run: python run_ui.py — then collect, train, and play all from here.",
-      );
+      updateProgress(); updateDatasetDisplays(); updateModelStatus();
+      logLine("UI ready. Run: python run_ui.py — then collect, train, and play all from here.");
       connect();
     </script>
   </body>
