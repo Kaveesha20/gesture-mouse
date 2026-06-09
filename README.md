@@ -51,11 +51,13 @@ This starts the backend server, serves the UI, and opens your browser to `http:/
 
 | Tab | Replaces | What to do |
 | --- | -------- | ---------- |
-| **Data Collection** | `collect_data.py` | Select gesture 0–6 → **Start Recording** → collect ~250 samples → **Save to Server** |
-| **Train Model** | `train.py` | Click **Train & Update Model** — merges new data into `gesture_data.csv`, retrains, and hot-reloads the model |
+| **Data Collection** | `collect_data.py` | Select gesture 0–6 → choose **Default Mode** or **Custom Mode** → **Start Recording** → collect ~250 samples → **Save to Server** |
+| **Train Model** | `train.py` | Click **Train & Update Model** — trains on the active dataset (`gesture_data.csv` or `custom_gesture_data.csv`), retrains, and hot-reloads the model |
 | **Playground** | `main.py` | Test gestures visually; the server also controls your real mouse while running |
 
 **Tip:** Enable **Retrain model after saving new data** on the Data Collection tab to automatically train after each save.
+
+**Custom mode:** Switching to **Custom Mode** resets `custom_gesture_data.csv` before new samples are collected, while `gesture_data.csv` stays intact.
 
 ---
 

@@ -50,6 +50,38 @@
         letter-spacing: 0.4px;
       }
 
+      #mode-switch {
+        display: flex;
+        gap: 0.45rem;
+        align-items: center;
+      }
+
+      .mode-btn {
+        border: 1px solid #2a3642;
+        color: var(--muted);
+        background: #121a22;
+        border-radius: 999px;
+        padding: 0.38rem 0.8rem;
+        font-size: 12px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+
+      .mode-btn.active {
+        background: rgba(49, 208, 170, 0.12);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      #mode-status {
+        color: var(--muted);
+        font-size: 12px;
+        border: 1px solid #2a3642;
+        border-radius: 999px;
+        padding: 0.28rem 0.7rem;
+        background: rgba(18, 26, 34, 0.7);
+      }
+
       #conn {
         margin-left: auto;
         display: flex;
@@ -139,6 +171,10 @@
         background: rgba(49, 208, 170, 0.12);
         border-color: var(--accent);
         color: var(--accent);
+      }
+
+      .hidden {
+        display: none !important;
       }
 
       .page {
@@ -611,6 +647,15 @@
   <body>
     <div id="topbar">
       <div id="brand">Gesture Lab</div>
+      <div id="mode-switch">
+        <button class="mode-btn active" id="default-mode-btn" type="button">
+          Default Mode
+        </button>
+        <button class="mode-btn" id="custom-mode-btn" type="button">
+          Custom Mode
+        </button>
+        <span id="mode-status">gesture_data.csv</span>
+      </div>
       <div id="conn">
         <span id="model-status" class="missing">Model: not trained</span>
         <div class="dot disconnected" id="dot"></div>
@@ -618,11 +663,21 @@
       </div>
     </div>
 
+    <div id="tabs">
+      <button class="tab active hidden" data-page="data-page" type="button">
+        Collect
+      </button>
+      <button class="tab hidden" data-page="train-page" type="button">Train</button>
+      <button class="tab" data-page="play-page" type="button">
+        Playground
+      </button>
+    </div>
+
     <div id="workflow">
-      <span class="step active" data-step="data-page"
+      <span class="step active hidden" data-step="data-page"
         >1. Collect data (per gesture)</span
       >
-      <span class="step" data-step="train-page"
+      <span class="step hidden" data-step="train-page"
         >2. Train &amp; update model</span
       >
       <span class="step" data-step="play-page"
@@ -647,8 +702,8 @@
         <div class="panel">
           <h3>Hyperparameters</h3>
           <p class="muted" style="margin-bottom: 0.7rem">
-            Replaces <code>train.py</code>. Trains on the full server dataset
-            and hot-reloads the live model — no separate script needed.
+            Replaces <code>train.py</code>. Trains on the active dataset and
+            hot-reloads the live model — no separate script needed.
           </p>
           <label for="train-epochs">Epochs</label>
           <input id="train-epochs" type="number" min="1" max="200" value="30" />
@@ -706,9 +761,9 @@
         <div class="panel">
           <h3>Training Dashboard</h3>
           <p class="muted">
-            Training merges any buffered samples into
-            <code>gesture_data.csv</code> on the server, retrains GestureNet,
-            and hot-reloads the live model for inference.
+            Training merges any buffered samples into the active dataset on the
+            server, retrains GestureNet, and hot-reloads the live model for
+            inference.
           </p>
         </div>
         <div
@@ -746,8 +801,16 @@
           <h3>Collection Settings</h3>
           <p class="muted" style="margin-bottom: 0.7rem">
             Replaces <code>collect_data.py</code>. Pick a gesture, record ~250
-            samples, save to server. Repeat for all 7 gestures (0–6).
+            samples, save to the active dataset, and repeat for all 7 gestures
+            (0–6).
           </p>
+          <div
+            class="muted"
+            id="collection-mode-label"
+            style="margin-bottom: 0.7rem"
+          >
+            Active dataset: gesture_data.csv
+          </div>
           <label for="label-select">Target Label</label>
           <select id="label-select">
             <option value="0">0 - move</option>
@@ -792,8 +855,8 @@
             Retrain model after saving new data
           </label>
           <p class="muted" style="margin-top: 0.55rem">
-            Saves buffered samples to <code>gesture_data.csv</code> and can
-            automatically retrain the live model.
+            Saves buffered samples to the active dataset and can automatically
+            retrain the live model.
           </p>
         </div>
 
@@ -956,6 +1019,12 @@
       const dot = document.getElementById("dot");
       const wsLabel = document.getElementById("ws-label");
       const modelStatus = document.getElementById("model-status");
+      const defaultModeBtn = document.getElementById("default-mode-btn");
+      const customModeBtn = document.getElementById("custom-mode-btn");
+      const modeStatus = document.getElementById("mode-status");
+      const collectionModeLabel = document.getElementById(
+        "collection-mode-label",
+      );
       const workflowSteps = document.querySelectorAll(".step");
       const trainPage = document.getElementById("train-page");
       const startTrainBtn = document.getElementById("start-train-btn");
@@ -991,6 +1060,7 @@
       const liveCursor = document.getElementById("live-cursor");
       const liveAction = document.getElementById("live-action");
       const liveLmCount = document.getElementById("live-lm-count");
+      const liveGestureTable = document.getElementById("table");
 
       const canvasArea = document.getElementById("canvas-area");
       const cursor = document.getElementById("cursor");
@@ -1021,6 +1091,9 @@
       let trainingInProgress = false;
       let pendingRetrainAfterSave = false;
       let modelReady = false;
+      let currentPageId = "play-page";
+      let currentMode = "default";
+      let currentDatasetFile = "gesture_data.csv";
       let doubleClickTotal = 0;
       let screenshotTotal = 0;
       let scrollUpTotal = 0;
@@ -1072,11 +1145,79 @@
       }
 
       function updateDatasetDisplays() {
-        serverDataSize.textContent = `Server dataset: ${serverTotalRows} rows`;
+        serverDataSize.textContent = `Active dataset: ${currentDatasetFile} | Rows: ${serverTotalRows}`;
         dataSize.textContent = `Buffered rows: ${localRows.length}`;
-        trainDatasetStatus.textContent = `Server dataset: ${serverTotalRows} rows | Buffer: ${localRows.length} rows`;
+        trainDatasetStatus.textContent = `Active dataset: ${currentDatasetFile} | Rows: ${serverTotalRows} | Buffer: ${localRows.length} rows`;
         trainLabelBreakdown.textContent =
           formatLabelBreakdown(serverLabelCounts);
+        if (collectionModeLabel) {
+          collectionModeLabel.textContent = `Active dataset: ${currentDatasetFile}`;
+        }
+      }
+
+      function updateModeButtons() {
+        defaultModeBtn.classList.toggle("active", currentMode === "default");
+        customModeBtn.classList.toggle("active", currentMode === "custom");
+        modeStatus.textContent = currentDatasetFile;
+      }
+
+      function updateModeVisibility() {
+        const customActive = currentMode === "custom";
+        document
+          .querySelectorAll('.tab[data-page="data-page"], .tab[data-page="train-page"], .step[data-step="data-page"], .step[data-step="train-page"]')
+          .forEach((el) => el.classList.toggle("hidden", !customActive));
+
+        if (!customActive) {
+          setTab("play-page");
+        }
+      }
+
+      function updateGestureVisibility() {
+        const showGesturePanel = currentPageId === "play-page";
+        if (liveGestureTable) {
+          liveGestureTable.classList.toggle("hidden", !showGesturePanel);
+        }
+      }
+
+      function resetLocalBuffer() {
+        localRows = [];
+        sessionRows = [];
+        recording = false;
+        toggleRecordBtn.textContent = "Start Recording";
+        recordingStatus.textContent = "Status: idle";
+        updateProgress();
+      }
+
+      function applyMode(mode, sendToServer = false) {
+        const previousMode = currentMode;
+        currentMode = mode === "custom" ? "custom" : "default";
+        currentDatasetFile =
+          currentMode === "custom"
+            ? "custom_gesture_data.csv"
+            : "gesture_data.csv";
+        updateModeButtons();
+        updateModeVisibility();
+        updateDatasetDisplays();
+
+        if (previousMode !== currentMode || currentMode === "custom") {
+          resetLocalBuffer();
+        }
+
+        if (currentMode === "custom") {
+          logLine("Custom mode enabled. Local buffer cleared.");
+        } else if (sendToServer) {
+          logLine("Default mode enabled.");
+        }
+
+        if (sendToServer && ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(
+            JSON.stringify({
+              type: "set_mode",
+              mode: currentMode,
+              reset: currentMode === "custom",
+            }),
+          );
+        }
       }
 
       function csvToBase64(csvText) {
@@ -1084,6 +1225,7 @@
       }
 
       function setTab(pageId) {
+        currentPageId = pageId;
         tabs.forEach((btn) =>
           btn.classList.toggle("active", btn.dataset.page === pageId),
         );
@@ -1099,6 +1241,11 @@
             page.classList.remove("active");
           }
         });
+        updateGestureVisibility();
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "set_ui_page", page_id: pageId }));
+        }
 
         if (pageId === "train-page") {
           updateDatasetDisplays();
@@ -1111,6 +1258,9 @@
       tabs.forEach((btn) => {
         btn.addEventListener("click", () => setTab(btn.dataset.page));
       });
+
+      defaultModeBtn.addEventListener("click", () => applyMode("default", true));
+      customModeBtn.addEventListener("click", () => applyMode("custom", true));
 
       workflowSteps.forEach((step) => {
         step.addEventListener("click", () => setTab(step.dataset.step));
@@ -1165,7 +1315,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `gesture_data_ui_${Date.now()}.csv`;
+        a.download = `${currentDatasetFile.replace(".csv", "")}_ui_${Date.now()}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1249,12 +1399,7 @@
       });
 
       clearDataBtn.addEventListener("click", () => {
-        localRows = [];
-        sessionRows = [];
-        recording = false;
-        toggleRecordBtn.textContent = "Start Recording";
-        recordingStatus.textContent = "Status: idle";
-        updateProgress();
+        resetLocalBuffer();
         logLine("Cleared buffered data.");
       });
 
@@ -1350,11 +1495,33 @@
           if (data.type === "dataset_info") {
             serverTotalRows = data.total || 0;
             serverLabelCounts = data.labels || {};
+            if (data.dataset_file) {
+              currentDatasetFile = data.dataset_file;
+            }
+            if (data.mode) {
+              currentMode = data.mode;
+            }
+            updateModeButtons();
+            updateModeVisibility();
+            updateDatasetDisplays();
             if (typeof data.model_ready === "boolean") {
               modelReady = data.model_ready;
               updateModelStatus();
             }
-            updateDatasetDisplays();
+            if (data.mode === "custom") {
+              recording = false;
+              toggleRecordBtn.textContent = "Start Recording";
+              recordingStatus.textContent = "Status: idle";
+            }
+            return;
+          }
+
+          if (data.type === "ui_page_status") {
+            return;
+          }
+
+          if (data.type === "mode_status") {
+            addTrainLog(data.message || `Mode switched to ${data.mode}.`);
             return;
           }
 
@@ -1417,59 +1584,69 @@
             frame = null,
           } = data;
 
-          liveGesture.textContent =
-            gesture == null
-              ? "-"
-              : `${gesture} (${gestureNames[gesture] || "unknown"})`;
-          liveConfidence.textContent = `${confidence}%`;
-          liveCursor.textContent = `(${cursor_x.toFixed(4)}, ${cursor_y.toFixed(4)})`;
-          liveAction.textContent = action || "none";
-          liveLmCount.textContent = String(landmarks.length);
+          if (currentPageId === "play-page") {
+            liveGesture.textContent =
+              gesture == null
+                ? "-"
+                : `${gesture} (${gestureNames[gesture] || "unknown"})`;
+            liveConfidence.textContent = `${confidence}%`;
+            liveCursor.textContent = `(${cursor_x.toFixed(4)}, ${cursor_y.toFixed(4)})`;
+            liveAction.textContent = action || "none";
+            liveLmCount.textContent = String(landmarks.length);
 
-          gesturePill.textContent =
-            gesture == null
-              ? "No gesture"
-              : `${gestureNames[gesture] || gesture}`;
-          gesturePill.className = "";
-          gesturePill.id = "gesture-pill";
-          if (confidence > 85) gesturePill.classList.add("active");
+            gesturePill.textContent =
+              gesture == null
+                ? "No gesture"
+                : `${gestureNames[gesture] || gesture}`;
+            gesturePill.className = "";
+            gesturePill.id = "gesture-pill";
+            if (confidence > 85) gesturePill.classList.add("active");
 
-          confBar.style.width = `${Math.max(0, Math.min(100, confidence))}%`;
-          confText.textContent = `${confidence}%`;
+            confBar.style.width = `${Math.max(0, Math.min(100, confidence))}%`;
+            confText.textContent = `${confidence}%`;
 
-          const px = cursor_x * canvasArea.clientWidth;
-          const py = cursor_y * canvasArea.clientHeight;
-          cursor.style.left = `${px}px`;
-          cursor.style.top = `${py}px`;
-          cursorReadout.textContent = `x: ${cursor_x.toFixed(4)} | y: ${cursor_y.toFixed(4)}`;
-          const targetRect = movementTarget.getBoundingClientRect();
-          const areaRect = canvasArea.getBoundingClientRect();
-          const screenX = areaRect.left + px;
-          const screenY = areaRect.top + py;
-          movementTarget.classList.toggle(
-            "inside",
-            screenX >= targetRect.left &&
-              screenX <= targetRect.right &&
-              screenY >= targetRect.top &&
-              screenY <= targetRect.bottom,
-          );
+            const px = cursor_x * canvasArea.clientWidth;
+            const py = cursor_y * canvasArea.clientHeight;
+            cursor.style.left = `${px}px`;
+            cursor.style.top = `${py}px`;
+            cursorReadout.textContent = `x: ${cursor_x.toFixed(4)} | y: ${cursor_y.toFixed(4)}`;
+            const targetRect = movementTarget.getBoundingClientRect();
+            const areaRect = canvasArea.getBoundingClientRect();
+            const screenX = areaRect.left + px;
+            const screenY = areaRect.top + py;
+            movementTarget.classList.toggle(
+              "inside",
+              screenX >= targetRect.left &&
+                screenX <= targetRect.right &&
+                screenY >= targetRect.top &&
+                screenY <= targetRect.bottom,
+            );
 
-          if (action === "left_click") {
-            pulseCursor();
-            showFlash("Left Click");
-          } else if (action === "right_click") {
-            showFlash("Right Click");
-          } else if (action === "double_click") {
-            pulseCursor();
-            showFlash("Double Click");
-          } else if (action === "screenshot") {
-            showFlash("Screenshot");
-          }else if (action === "scroll_up") {
-            showFlash("Scroll Up");
-          } else if (action === "scroll_down") {
-            showFlash("Scroll Down");
+            if (action === "left_click") {
+              pulseCursor();
+              showFlash("Left Click");
+            } else if (action === "right_click") {
+              showFlash("Right Click");
+            } else if (action === "double_click") {
+              pulseCursor();
+              showFlash("Double Click");
+            } else if (action === "screenshot") {
+              showFlash("Screenshot");
+            } else if (action === "scroll_up") {
+              showFlash("Scroll Up");
+            } else if (action === "scroll_down") {
+              showFlash("Scroll Down");
+            }
+            showGestureAction(action);
+          } else {
+            liveGesture.textContent = "-";
+            liveConfidence.textContent = "0%";
+            liveCursor.textContent = "(0.5000, 0.5000)";
+            liveAction.textContent = "none";
+            liveLmCount.textContent = "0";
+            confBar.style.width = "0%";
+            confText.textContent = "0%";
           }
-          showGestureAction(action);
 
           if (recording && landmarks.length === 42) {
             const row = [

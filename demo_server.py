@@ -26,8 +26,16 @@ pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
 
 DATA_FILE = 'gesture_data.csv'
+CUSTOM_DATA_FILE = 'custom_gesture_data.csv'
+MODE_FILES = {
+    'default': DATA_FILE,
+    'custom': CUSTOM_DATA_FILE,
+}
 MODEL_FILE = 'gesture_model.pth'
 ENCODER_FILE = 'label_encoder.pkl'
+current_mode = 'default'
+current_dataset_file = DATA_FILE
+current_ui_page = 'play-page'
 
 # --------------------------
 # Model
@@ -64,6 +72,42 @@ def load_model():
 
 model_ready = load_model()
 
+
+def csv_columns():
+    return [f'{axis}{i}' for i in range(21) for axis in ['x', 'y']] + ['label']
+
+
+def ensure_dataset_file(path):
+    if not os.path.exists(path):
+        pd.DataFrame(columns=csv_columns()).to_csv(path, index=False)
+
+
+def reset_dataset_file(path):
+    pd.DataFrame(columns=csv_columns()).to_csv(path, index=False)
+
+
+def set_dataset_mode(mode, reset=False):
+    global current_mode, current_dataset_file
+
+    current_mode = mode if mode in MODE_FILES else 'default'
+    current_dataset_file = MODE_FILES[current_mode]
+
+    if current_mode == 'custom' and reset:
+        reset_dataset_file(current_dataset_file)
+    elif current_mode == 'custom':
+        ensure_dataset_file(current_dataset_file)
+
+    return current_mode, current_dataset_file
+
+
+def set_ui_page(page_id):
+    global current_ui_page
+    if page_id in {'data-page', 'train-page', 'play-page'}:
+        current_ui_page = page_id
+    else:
+        current_ui_page = 'play-page'
+    return current_ui_page
+
 # Mouse setup
 mouse = Controller()
 screen_width, screen_height = pyautogui.size()
@@ -96,27 +140,29 @@ last_action_time = 0
 COOLDOWN = 2.0
 
 
-def get_dataset_info():
-    if not os.path.exists(DATA_FILE):
-        return {"total": 0, "labels": {}, "path": DATA_FILE}
+def get_dataset_info(dataset_file=None):
+    dataset_file = dataset_file or current_dataset_file
+    if not os.path.exists(dataset_file):
+        return {"total": 0, "labels": {}, "path": dataset_file, "mode": current_mode}
 
-    df = pd.read_csv(DATA_FILE)
+    df = pd.read_csv(dataset_file)
     labels = df['label'].value_counts().sort_index().to_dict()
     labels = {str(k): int(v) for k, v in labels.items()}
-    return {"total": len(df), "labels": labels, "path": DATA_FILE}
+    return {"total": len(df), "labels": labels, "path": dataset_file, "mode": current_mode}
 
 
-def merge_csv_data(csv_base64):
+def merge_csv_data(csv_base64, dataset_file=None):
+    dataset_file = dataset_file or current_dataset_file
     csv_bytes = base64.b64decode(csv_base64)
     new_df = pd.read_csv(io.BytesIO(csv_bytes))
 
-    if os.path.exists(DATA_FILE):
-        existing = pd.read_csv(DATA_FILE)
+    if os.path.exists(dataset_file):
+        existing = pd.read_csv(dataset_file)
         combined = pd.concat([existing, new_df], ignore_index=True)
     else:
         combined = new_df
 
-    combined.to_csv(DATA_FILE, index=False)
+    combined.to_csv(dataset_file, index=False)
     return len(new_df), len(combined)
 
 
@@ -128,6 +174,8 @@ async def register(websocket):
         "type": "dataset_info",
         "total": info["total"],
         "labels": info["labels"],
+        "dataset_file": info["path"],
+        "mode": info["mode"],
         "model_ready": model_ready,
     }))
 
@@ -151,6 +199,8 @@ async def send_dataset_update():
         "type": "dataset_info",
         "total": info["total"],
         "labels": info["labels"],
+        "dataset_file": info["path"],
+        "mode": info["mode"],
         "model_ready": model_ready,
     }))
 
@@ -218,11 +268,11 @@ def perform_action(gesture, processed, confidence):
 # ====================== DATA & TRAINING ======================
 async def save_data(csv_base64):
     try:
-        added, total = merge_csv_data(csv_base64)
+        added, total = merge_csv_data(csv_base64, current_dataset_file)
         await broadcast(json.dumps({
             "type": "save_status",
             "status": "completed",
-            "message": f"Saved {added} new rows. Dataset now has {total} rows.",
+            "message": f"Saved {added} new rows to {current_dataset_file}. Dataset now has {total} rows.",
             "added": added,
             "total": total,
         }))
@@ -241,23 +291,23 @@ async def train_model(csv_base64=None, epochs=30, lr=0.001, test_split=0.2):
     async with training_lock:
         try:
             if csv_base64:
-                added, total = merge_csv_data(csv_base64)
+                added, total = merge_csv_data(csv_base64, current_dataset_file)
                 await broadcast(json.dumps({
                     "type": "train_status",
                     "status": "starting",
-                    "message": f"Merged {added} new rows into dataset ({total} total). Training...",
+                    "message": f"Merged {added} new rows into {current_dataset_file} ({total} total). Training...",
                 }))
-            elif not os.path.exists(DATA_FILE):
+            elif not os.path.exists(current_dataset_file):
                 raise FileNotFoundError("No dataset found. Collect samples in the UI first.")
             else:
                 info = get_dataset_info()
                 await broadcast(json.dumps({
                     "type": "train_status",
                     "status": "starting",
-                    "message": f"Training on {info['total']} rows from {DATA_FILE}...",
+                    "message": f"Training on {info['total']} rows from {current_dataset_file}...",
                 }))
 
-            df = pd.read_csv(DATA_FILE)
+            df = pd.read_csv(current_dataset_file)
             if len(df) < 10:
                 raise ValueError("Need at least 10 samples to train.")
 
@@ -330,7 +380,7 @@ async def train_model(csv_base64=None, epochs=30, lr=0.001, test_split=0.2):
             await broadcast(json.dumps({
                 "type": "train_status",
                 "status": "completed",
-                "message": f"Training completed. Model updated ({len(df)} samples, val acc {val_acc:.1f}%).",
+                "message": f"Training completed from {current_dataset_file}. Model updated ({len(df)} samples, val acc {val_acc:.1f}%).",
                 "val_acc": round(val_acc, 1),
                 "total_samples": len(df),
             }))
@@ -375,7 +425,7 @@ async def camera_loop():
 
         if len(landmark_list) == 42:
             gesture_label, confidence = predict_gesture(landmark_list)
-            if gesture_label is not None:
+            if gesture_label is not None and current_ui_page == 'play-page':
                 action = perform_action(gesture_label, processed, confidence)
 
         _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
@@ -417,6 +467,22 @@ async def handler(websocket):
                     lr=data.get("lr", 0.001),
                     test_split=data.get("test_split", 0.2),
                 ))
+            elif msg_type == "set_mode":
+                mode, dataset_file = set_dataset_mode(data.get("mode", "default"), reset=bool(data.get("reset", False)))
+                await send_dataset_update()
+                await broadcast(json.dumps({
+                    "type": "mode_status",
+                    "mode": mode,
+                    "dataset_file": dataset_file,
+                    "message": f"Mode switched to {mode} using {dataset_file}.",
+                }))
+            elif msg_type == "set_ui_page":
+                page_id = set_ui_page(data.get("page_id", "play-page"))
+                await broadcast(json.dumps({
+                    "type": "ui_page_status",
+                    "page_id": page_id,
+                    "message": f"UI page set to {page_id}.",
+                }))
             elif msg_type == "get_dataset":
                 await send_dataset_update()
     except websockets.exceptions.ConnectionClosed:
