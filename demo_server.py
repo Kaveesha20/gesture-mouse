@@ -31,8 +31,19 @@ MODE_FILES = {
     'default': DATA_FILE,
     'custom': CUSTOM_DATA_FILE,
 }
-MODEL_FILE = 'gesture_model.pth'
-ENCODER_FILE = 'label_encoder.pkl'
+
+DEFAULT_MODEL_FILE = 'gesture_model.pth'
+DEFAULT_ENCODER_FILE = 'label_encoder.pkl'
+CUSTOM_MODEL_FILE = 'custom_gesture_model.pth'
+CUSTOM_ENCODER_FILE = 'custom_label_encoder.pkl'
+
+MODE_MODELS = {
+    'default': (DEFAULT_MODEL_FILE, DEFAULT_ENCODER_FILE),
+    'custom': (CUSTOM_MODEL_FILE, CUSTOM_ENCODER_FILE),
+}
+
+MODEL_FILE = DEFAULT_MODEL_FILE
+ENCODER_FILE = DEFAULT_ENCODER_FILE
 current_mode = 'default'
 current_dataset_file = DATA_FILE
 current_ui_page = 'play-page'
@@ -87,15 +98,24 @@ def reset_dataset_file(path):
 
 
 def set_dataset_mode(mode, reset=False):
-    global current_mode, current_dataset_file
+    global current_mode, current_dataset_file, MODEL_FILE, ENCODER_FILE
 
     current_mode = mode if mode in MODE_FILES else 'default'
     current_dataset_file = MODE_FILES[current_mode]
+    MODEL_FILE, ENCODER_FILE = MODE_MODELS[current_mode]
 
-    if current_mode == 'custom' and reset:
-        reset_dataset_file(current_dataset_file)
+    # Initialize dataset files based on mode
+    if current_mode == 'default':
+        # Ensure default dataset file exists with headers
+        ensure_dataset_file(DATA_FILE)
     elif current_mode == 'custom':
-        ensure_dataset_file(current_dataset_file)
+        if reset:
+            reset_dataset_file(current_dataset_file)
+        else:
+            ensure_dataset_file(current_dataset_file)
+
+    # Reload model for the new mode
+    reload_model_for_mode()
 
     return current_mode, current_dataset_file
 
@@ -107,6 +127,32 @@ def set_ui_page(page_id):
     else:
         current_ui_page = 'play-page'
     return current_ui_page
+
+
+def reload_model_for_mode():
+    """Reload the model and encoder for the current mode."""
+    global model, le, model_ready, MODEL_FILE, ENCODER_FILE
+    
+    if os.path.exists(MODEL_FILE) and os.path.exists(ENCODER_FILE):
+        model = GestureNet()
+        model.load_state_dict(torch.load(MODEL_FILE, weights_only=True))
+        with open(ENCODER_FILE, 'rb') as f:
+            le = pickle.load(f)
+        model.eval()
+        model_ready = True
+        print(f"Loaded {current_mode} model from {MODEL_FILE}")
+        return True
+    else:
+        model = GestureNet()
+        le = LabelEncoder()
+        le.fit([0, 1, 2, 3, 4])
+        model.eval()
+        model_ready = False
+        print(f"No {current_mode} model found. Using default encoder.")
+        return False
+
+# Initialize default mode on startup
+set_dataset_mode('default')
 
 # Mouse setup
 mouse = Controller()
