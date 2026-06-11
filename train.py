@@ -48,11 +48,11 @@ class GestureNet(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(42, 128),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.4),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(64, 5)   # 5 gesture classes
+            nn.Dropout(0.3),
+            nn.Linear(64, 7)   # 7 gesture classes
         )
 
     def forward(self, x):
@@ -65,7 +65,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # --------------------------
 # Training loop
 # --------------------------
-EPOCHS = 50
+EPOCHS = 40
 
 for epoch in range(EPOCHS):
     model.train()

@@ -26,7 +26,7 @@ class GestureNet(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Dropout(0.2),
-            nn.Linear(64, 5)
+            nn.Linear(64, 7)
         )
     def forward(self, x):
         return self.net(x)
@@ -59,7 +59,9 @@ GESTURE_NAMES = {
     '1': 'Left Click',
     '2': 'Right Click',
     '3': 'Double Click',
-    '4': 'Screenshot'
+    '4': 'Screenshot',
+    '5': 'Scroll Up',    
+    '6': 'Scroll Down', 
 }
 
 last_action_time = 0
