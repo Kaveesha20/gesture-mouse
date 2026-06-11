@@ -65,7 +65,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 # --------------------------
 # Training loop
 # --------------------------
-EPOCHS = 50
+EPOCHS = 30
 
 for epoch in range(EPOCHS):
     model.train()
