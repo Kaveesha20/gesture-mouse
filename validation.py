@@ -232,7 +232,7 @@ def save_validation_results_txt(dataset_file, total_samples, train_samples, test
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", default=DATA_FILE)
-    parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--test-size", type=float, default=0.2)
